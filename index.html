@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>セラピスト別顧客分析</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<!-- ===== アップロード画面 ===== -->
+<div id="upload-section">
+    <div class="upload-card">
+        <div class="upload-logo">💆</div>
+        <h1>セラピスト別顧客分析</h1>
+        <p class="upload-desc">「詳細分析」シートをCSV形式でダウンロードしてアップロードしてください</p>
+
+        <div class="upload-area" id="upload-area">
+            <div class="upload-icon">📂</div>
+            <p>CSVファイルをドラッグ＆ドロップ</p>
+            <p class="upload-sub">または</p>
+            <label class="btn-primary" for="csv-input">ファイルを選択</label>
+            <input type="file" id="csv-input" accept=".csv" hidden>
+        </div>
+
+        <button class="btn-sample" id="sample-btn">📊 サンプルデータで試す（4月分）</button>
+
+        <div class="upload-hint">
+            <strong>CSVのエクスポート手順:</strong>
+            Googleスプレッドシート → ファイル → ダウンロード → カンマ区切り形式 (.csv)
+        </div>
+    </div>
+</div>
+
+<!-- ===== ダッシュボード ===== -->
+<div id="dashboard" class="hidden">
+
+    <header class="app-header">
+        <div class="header-left">
+            <span class="header-logo">💆</span>
+            <h1 id="app-title">セラピスト別顧客分析</h1>
+        </div>
+        <button id="reset-btn" class="btn-secondary">別のファイルを読み込む</button>
+    </header>
+
+    <!-- タブ -->
+    <div class="tabs-wrapper">
+        <div id="tabs" class="tabs"></div>
+    </div>
+
+    <!-- コンテンツ -->
+    <main class="dashboard-main">
+
+        <!-- サマリーバー -->
+        <div id="stats-bar" class="stats-bar"></div>
+
+        <!-- チャートグリッド -->
+        <div class="charts-grid">
+            <div class="chart-card area-age">
+                <h3 class="chart-title">📅 年代分布（対応数 vs 購入数）</h3>
+                <div class="chart-wrap"><canvas id="chart-age"></canvas></div>
+            </div>
+            <div class="chart-card area-gender">
+                <h3 class="chart-title">👥 性別</h3>
+                <div class="chart-wrap"><canvas id="chart-gender"></canvas></div>
+            </div>
+            <div class="chart-card area-symptoms">
+                <h3 class="chart-title">🩺 症状別（対応数 vs 購入数）</h3>
+                <div class="chart-wrap chart-wrap-tall"><canvas id="chart-symptoms"></canvas></div>
+            </div>
+            <div class="chart-card area-sameday">
+                <h3 class="chart-title">📣 媒体別 購入率</h3>
+                <div class="chart-wrap"><canvas id="chart-sameday"></canvas></div>
+            </div>
+            <div class="chart-card area-media">
+                <h3 class="chart-title">📊 媒体別 対応数</h3>
+                <div class="chart-wrap"><canvas id="chart-media"></canvas></div>
+            </div>
+        </div>
+
+        <!-- 購入率テーブル -->
+        <div class="segment-section">
+            <div class="segment-header">
+                <h2>⭐ 得意顧客層 / 苦手顧客層（購入率ベース・1回券含まず）</h2>
+                <div class="threshold-controls">
+                    <div class="threshold-item">
+                        <label>
+                            <span class="badge-good">得意</span>
+                            購入率 <span id="good-val">50</span>% 以上
+                        </label>
+                        <input type="range" id="good-threshold" min="10" max="90" value="50" step="5">
+                    </div>
+                    <div class="threshold-item">
+                        <label>
+                            <span class="badge-bad">苦手</span>
+                            購入率 <span id="bad-val">30</span>% 以下
+                        </label>
+                        <input type="range" id="bad-threshold" min="10" max="90" value="30" step="5">
+                    </div>
+                </div>
+            </div>
+            <div id="segment-table"></div>
+        </div>
+
+    </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
