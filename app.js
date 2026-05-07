@@ -115,11 +115,23 @@ function detectFormat(rows) {
     const first = String(rows[0]?.[0] ?? '').trim();
     if (first === '詳細分析') return 'aggregated';
     if (first === '日付')    return 'raw';
-    // 先頭数行に日付パターン（M/D）があれば raw とみなす
+    // 先頭数行に日付パターンがあれば raw とみなす（4/1 または 4月1日 または ４月１日）
     for (let i = 0; i < Math.min(5, rows.length); i++) {
-        if (/^\d{1,2}\/\d{1,2}$/.test(String(rows[i]?.[0] ?? '').trim())) return 'raw';
+        if (isDateCell(String(rows[i]?.[0] ?? '').trim())) return 'raw';
     }
     return 'unknown';
+}
+
+// 日付セル判定（4/1・4月1日・４月１日 いずれも対応）
+function isDateCell(s) {
+    const n = toHalfWidth(s);
+    return /^\d{1,2}\/\d{1,2}$/.test(n) || /^\d{1,2}月\d{1,2}日$/.test(n);
+}
+
+// 全角英数字→半角変換
+function toHalfWidth(s) {
+    return s.replace(/[０-９]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+            .replace(/[Ａ-Ｚａ-ｚ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
 }
 
 // ==================== 生データ CSV パース（新規購入内訳） ====================
@@ -131,14 +143,14 @@ function parseRawCSV(rows) {
     const patientRows  = [];
 
     for (const row of rows) {
-        if (!/^\d{1,2}\/\d{1,2}$/.test(String(row[0] ?? '').trim())) continue;
+        if (!isDateCell(String(row[0] ?? '').trim())) continue;
         const therapist = String(row[4] ?? '').trim();
         if (!therapist) continue;
         therapistSet.add(therapist);
         patientRows.push(row);
     }
 
-    if (!patientRows.length) throw new Error('患者データが見つかりませんでした。日付(M/D形式)の列が1列目にあるか確認してください。');
+    if (!patientRows.length) throw new Error('患者データが見つかりませんでした。日付列(4/1 または 4月1日 形式)が1列目にあるか確認してください。');
 
     const therapistList = [...therapistSet];
     const data = {};
@@ -154,12 +166,20 @@ function parseRawCSV(rows) {
         const kaikenRaw  = String(row[8] ?? '').trim();
 
         const gender = genderRaw === '男性' ? 'male' : genderRaw === '女性' ? 'female' : null;
-        const ageNum = parseInt(ageRaw, 10);
-        const age    = !isNaN(ageNum) && ageNum > 0 ? (ageNum * 10) + '代' : null;
+
+        // 年代: 「50代」そのまま or 数字1桁「5」→「50代」に統一
+        let age = null;
+        if (/^\d+代$/.test(ageRaw)) {
+            age = ageRaw; // 「50代」形式はそのまま
+        } else {
+            const ageNum = parseInt(toHalfWidth(ageRaw), 10);
+            if (!isNaN(ageNum) && ageNum > 0) age = (ageNum <= 9 ? ageNum * 10 : ageNum) + '代';
+        }
 
         // 2回以上の回数券のみ「購入」とカウント（1回券・初回のみ除外）
-        const kaikenInt  = parseInt(kaikenRaw, 10);
-        const isPurchase = !isNaN(kaikenInt) && kaikenInt > 1;
+        // 対応形式: 「32」「8回券」「40回券」→ 数字部分を抽出
+        const kaikenNum  = parseInt(toHalfWidth(kaikenRaw).replace(/回券.*/, ''), 10);
+        const isPurchase = !isNaN(kaikenNum) && kaikenNum > 1;
 
         for (const key of [therapist, '院合計']) {
             const d = data[key];
