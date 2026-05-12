@@ -4,14 +4,25 @@
 
 // ==================== STATE ====================
 const state = {
-    therapists: [],
+    months: [],             // [{ period, therapists, data }]
+    allTherapists: [],      // 全月のセラピスト名の和集合
+    currentMonthIdx: 0,     // ダッシュボードで表示中の月のインデックス
     currentTherapist: 'all',
-    data: {},
+    currentView: 'dashboard', // 'dashboard' | 'trend'
     charts: {},
     goodThreshold: 50,
     badThreshold: 30,
-    period: '',
 };
+
+const TREND_COLORS = [
+    'rgba(79,70,229,0.85)',
+    'rgba(16,185,129,0.85)',
+    'rgba(245,158,11,0.85)',
+    'rgba(236,72,153,0.85)',
+    'rgba(59,130,246,0.85)',
+    'rgba(139,92,246,0.85)',
+    'rgba(239,68,68,0.85)',
+];
 
 const CHART_COLORS = {
     pink:   'rgba(236,72,153,0.85)',
@@ -46,6 +57,16 @@ document.getElementById('csv-input').addEventListener('change', e => {
     if (file) handleFile(file);
 });
 
+document.getElementById('add-month-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) handleFile(file);
+    e.target.value = '';
+});
+
+document.getElementById('add-month-btn').addEventListener('click', () => {
+    document.getElementById('add-month-input').click();
+});
+
 const uploadArea = document.getElementById('upload-area');
 uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
 uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
@@ -60,6 +81,11 @@ document.getElementById('sample-btn').addEventListener('click', () => loadCSVTex
 
 document.getElementById('reset-btn').addEventListener('click', () => {
     destroyCharts();
+    state.months = [];
+    state.allTherapists = [];
+    state.currentView = 'dashboard';
+    state.currentMonthIdx = 0;
+    state.currentTherapist = 'all';
     document.getElementById('dashboard').classList.add('hidden');
     document.getElementById('upload-section').classList.remove('hidden');
     document.getElementById('csv-input').value = '';
@@ -85,19 +111,118 @@ function handleFile(file) {
     tryLoad('utf-8');
 }
 
-function loadCSVText(text, title) {
-    const result = parseCSV(text);
-    state.therapists = result.therapists;
-    state.data = result.data;
-    state.period = title || '';
-    state.currentTherapist = 'all';
+// ファイル名から年*100+月 の数値を返す（ソート用）
+function extractYearMonth(period) {
+    const m = period.match(/(\d{4})年(\d{1,2})月/);
+    if (m) return parseInt(m[1]) * 100 + parseInt(m[2]);
+    return 0;
+}
 
+// ファイル名を省略表示用に整形
+function abbreviatePeriod(period) {
+    return period
+        .replace(/帳簿\d{4}年/, '')
+        .replace(/\s*[-－].*$/, '')
+        .trim();
+}
+
+function loadCSVText(text, title) {
+    const isFirst = state.months.length === 0;
+    const result = parseCSV(text);
+    const period = title || '';
+
+    // 同じ period 名なら上書き、なければ push
+    const existIdx = state.months.findIndex(m => m.period === period);
+    if (existIdx >= 0) {
+        state.months[existIdx] = { period, therapists: result.therapists, data: result.data };
+    } else {
+        state.months.push({ period, therapists: result.therapists, data: result.data });
+    }
+
+    // 年月でソート
+    state.months.sort((a, b) => extractYearMonth(a.period) - extractYearMonth(b.period));
+
+    // allTherapists を全月の和集合に更新
+    const therapistSet = new Set();
+    state.months.forEach(m => m.therapists.forEach(t => therapistSet.add(t)));
+    state.allTherapists = [...therapistSet];
+
+    // currentMonthIdx を追加した月のインデックスに更新（ソート後）
+    const newIdx = state.months.findIndex(m => m.period === period);
+    if (isFirst) {
+        state.currentMonthIdx = 0;
+        state.currentTherapist = 'all';
+        state.currentView = 'dashboard';
+    } else {
+        state.currentMonthIdx = newIdx >= 0 ? newIdx : state.currentMonthIdx;
+    }
+
+    document.getElementById('app-title').textContent = 'セラピスト別顧客分析';
     document.getElementById('upload-section').classList.add('hidden');
     document.getElementById('dashboard').classList.remove('hidden');
-    document.getElementById('app-title').textContent = title || 'セラピスト別顧客分析';
 
+    renderMonthsBar();
     renderTabs();
-    renderDashboard('all');
+    if (isFirst || state.currentView === 'dashboard') {
+        showDashboard();
+    } else if (state.currentView === 'trend') {
+        showTrend();
+    }
+}
+
+// ==================== 月チップバー ====================
+function renderMonthsBar() {
+    const bar = document.getElementById('months-bar');
+    bar.innerHTML = '';
+    state.months.forEach((m, i) => {
+        const label = abbreviatePeriod(m.period);
+        const chip = document.createElement('span');
+        chip.className = 'month-chip' + (state.currentView === 'dashboard' && i === state.currentMonthIdx ? ' active' : '');
+
+        const labelSpan = document.createElement('span');
+        labelSpan.textContent = label;
+        labelSpan.addEventListener('click', () => {
+            state.currentMonthIdx = i;
+            state.currentView = 'dashboard';
+            renderMonthsBar();
+            renderTabs();
+            showDashboard();
+        });
+
+        const removeBtn = document.createElement('span');
+        removeBtn.className = 'chip-remove';
+        removeBtn.textContent = '✕';
+        removeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            state.months.splice(i, 1);
+            // allTherapists 更新
+            const ts = new Set();
+            state.months.forEach(mm => mm.therapists.forEach(t => ts.add(t)));
+            state.allTherapists = [...ts];
+
+            if (state.months.length === 0) {
+                destroyCharts();
+                document.getElementById('dashboard').classList.add('hidden');
+                document.getElementById('upload-section').classList.remove('hidden');
+                document.getElementById('csv-input').value = '';
+                return;
+            }
+            if (state.currentMonthIdx >= state.months.length) {
+                state.currentMonthIdx = state.months.length - 1;
+            }
+            renderMonthsBar();
+            renderTabs();
+            if (state.currentView === 'trend') {
+                showTrend();
+            } else {
+                showDashboard();
+            }
+        });
+
+        chip.appendChild(labelSpan);
+        chip.appendChild(removeBtn);
+        bar.appendChild(chip);
+    });
 }
 
 // ==================== CSV パース（フォーマット振り分け） ====================
@@ -349,25 +474,64 @@ function toInt(v) { const n = parseInt(String(v || '').trim()); return isNaN(n) 
 function renderTabs() {
     const el = document.getElementById('tabs');
     el.innerHTML = '';
-    [['all', '🏠 全員まとめ（院合計）'], ...state.therapists.map(n => [n, n])].forEach(([key, label]) => {
+
+    const entries = [['all', '🏠 全員まとめ（院合計）'], ...state.allTherapists.map(n => [n, n])];
+    if (state.months.length >= 2) entries.push(['__trend__', '📈 推移']);
+
+    entries.forEach(([key, label]) => {
         const btn = document.createElement('button');
-        btn.className = 'tab' + (key === state.currentTherapist ? ' active' : '');
+        const isActive = key === '__trend__'
+            ? state.currentView === 'trend'
+            : state.currentView === 'dashboard' && key === state.currentTherapist;
+        btn.className = 'tab' + (isActive ? ' active' : '');
         btn.textContent = label;
         btn.addEventListener('click', () => {
             el.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
-            state.currentTherapist = key;
-            renderDashboard(key);
+            if (key === '__trend__') {
+                state.currentView = 'trend';
+                renderMonthsBar();
+                showTrend();
+            } else {
+                state.currentView = 'dashboard';
+                state.currentTherapist = key;
+                renderMonthsBar();
+                showDashboard();
+            }
         });
         el.appendChild(btn);
     });
 }
 
+function showDashboard() {
+    document.getElementById('dashboard-main').classList.remove('hidden');
+    document.getElementById('trend-main').classList.add('hidden');
+    renderDashboard(state.currentTherapist);
+}
+
+function showTrend() {
+    document.getElementById('dashboard-main').classList.add('hidden');
+    document.getElementById('trend-main').classList.remove('hidden');
+    renderTrendView();
+}
+
 // ==================== ダッシュボード ====================
 function renderDashboard(key) {
-    const d = key === 'all' ? state.data['院合計'] : state.data[key];
-    if (!d) return;
+    const month = state.months[state.currentMonthIdx];
+    if (!month) return;
+
+    const dataKey = key === 'all' ? '院合計' : key;
+    const d = month.data[dataKey];
+
     destroyCharts();
+
+    if (!d) {
+        document.getElementById('stats-bar').innerHTML = '<p style="color:#94A3B8;padding:16px;">この月にデータがありません</p>';
+        document.getElementById('segment-table').innerHTML = '';
+        ['chart-age', 'chart-gender', 'chart-symptoms', 'chart-sameday', 'chart-media'].forEach(noData);
+        return;
+    }
+
     renderStats(d, key);
     renderAgeChart(d);
     renderGenderChart(d);
@@ -612,13 +776,141 @@ function tableBlock(title, rows, good, bad) {
     </div>`;
 }
 
+// ==================== トレンドビュー ====================
+function renderTrendView() {
+    destroyCharts();
+
+    const months = state.months;
+    const labels = months.map(m => abbreviatePeriod(m.period));
+    const names = ['院合計', ...state.allTherapists];
+
+    // 1. 購入率の推移
+    const rateDatasets = names.map((name, i) => ({
+        label: name === '院合計' ? '院合計' : name,
+        data: months.map(m => m.data[name]?.total.rate ?? null),
+        borderColor: TREND_COLORS[i % TREND_COLORS.length],
+        backgroundColor: TREND_COLORS[i % TREND_COLORS.length],
+        spanGaps: true,
+        pointRadius: 5,
+        tension: 0.3,
+        fill: false,
+    }));
+
+    makeChart('chart-trend-rate', {
+        type: 'line',
+        data: { labels, datasets: rateDatasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } },
+        },
+    });
+
+    // 2. 対応数の推移
+    const countDatasets = names.map((name, i) => ({
+        label: name === '院合計' ? '院合計' : name,
+        data: months.map(m => m.data[name]?.total.treated ?? 0),
+        backgroundColor: TREND_COLORS[i % TREND_COLORS.length],
+        borderRadius: 4,
+    }));
+
+    makeChart('chart-trend-count', {
+        type: 'bar',
+        data: { labels, datasets: countDatasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+        },
+    });
+
+    // 3. 症状別 対応数 TOP5（全月・全セラピスト合算）
+    const symptomTotals = {};
+    months.forEach(m => {
+        Object.values(m.data).forEach(d => {
+            Object.entries(d.symptoms || {}).forEach(([sym, v]) => {
+                symptomTotals[sym] = (symptomTotals[sym] || 0) + (v.treated || 0);
+            });
+        });
+    });
+    const top5Symptoms = Object.entries(symptomTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([sym]) => sym);
+
+    const symptomDatasets = top5Symptoms.map((sym, i) => ({
+        label: sym,
+        data: months.map(m => {
+            let total = 0;
+            Object.values(m.data).forEach(d => {
+                total += d.symptoms?.[sym]?.treated ?? 0;
+            });
+            return total;
+        }),
+        backgroundColor: TREND_COLORS[i % TREND_COLORS.length],
+        borderRadius: 2,
+    }));
+
+    makeChart('chart-trend-symptoms', {
+        type: 'bar',
+        data: { labels, datasets: symptomDatasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                x: { stacked: true },
+                y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+            },
+        },
+    });
+
+    // trend-summary テーブル
+    const summaryEl = document.getElementById('trend-summary');
+    const rows = months.map(m => {
+        const clinic = m.data['院合計'];
+        const therapistCells = m.therapists.map(t => {
+            const td = m.data[t];
+            return `${t}: ${td?.total.treated ?? 0}人 / ${td?.total.rate !== null && td?.total.rate !== undefined ? td.total.rate + '%' : '-'}`;
+        }).join('<br>');
+        return `<tr>
+            <td>${abbreviatePeriod(m.period)}</td>
+            <td>${clinic?.total.treated ?? 0}人</td>
+            <td>${clinic?.total.purchase ?? 0}人</td>
+            <td>${clinic?.total.rate !== null && clinic?.total.rate !== undefined ? clinic.total.rate + '%' : '-'}</td>
+            <td style="font-size:0.82rem;line-height:1.6;">${therapistCells}</td>
+        </tr>`;
+    }).join('');
+
+    summaryEl.innerHTML = `
+        <div class="segment-section" style="margin-top:16px">
+            <h2 style="font-size:1rem;font-weight:700;color:#1E293B;margin-bottom:16px;">月別サマリー</h2>
+            <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                <thead style="background:#F8FAFC;color:#64748B;font-weight:600;">
+                    <tr>
+                        <th style="padding:8px;text-align:left;border-bottom:1px solid #E2E8F0;">期間</th>
+                        <th style="padding:8px;text-align:right;border-bottom:1px solid #E2E8F0;">対応数</th>
+                        <th style="padding:8px;text-align:right;border-bottom:1px solid #E2E8F0;">購入数</th>
+                        <th style="padding:8px;text-align:right;border-bottom:1px solid #E2E8F0;">購入率</th>
+                        <th style="padding:8px;text-align:left;border-bottom:1px solid #E2E8F0;">セラピスト別</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+            </div>
+        </div>`;
+}
+
 // 閾値スライダー
 ['good', 'bad'].forEach(type => {
     document.getElementById(`${type}-threshold`).addEventListener('input', function() {
         state[`${type}Threshold`] = +this.value;
         document.getElementById(`${type}-val`).textContent = this.value;
-        if (!state.therapists.length) return;
-        const d = state.currentTherapist === 'all' ? state.data['院合計'] : state.data[state.currentTherapist];
+        if (!state.months.length) return;
+        const month = state.months[state.currentMonthIdx];
+        if (!month) return;
+        const dataKey = state.currentTherapist === 'all' ? '院合計' : state.currentTherapist;
+        const d = month.data[dataKey];
         if (d) { renderMediaRateChart(d); renderTable(d); }
     });
 });

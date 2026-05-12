@@ -400,6 +400,52 @@ body {
 }
 .no-revisit-notice span { font-size: 2rem; display: block; margin-bottom: 8px; }
 
+/* ===== 月バー ===== */
+.months-bar {
+    background: #fff;
+    border-bottom: 1px solid #E2E8F0;
+    padding: 8px 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.month-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #F1F5F9;
+    border: 1px solid #CBD5E1;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    color: #374151;
+    transition: background 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+.month-chip:hover { background: #E2E8F0; }
+.month-chip.active { background: #EEF2FF; border-color: #4F46E5; color: #4F46E5; font-weight: 600; }
+.chip-remove {
+    font-size: 0.75rem;
+    color: #94A3B8;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+}
+.chip-remove:hover { color: #EF4444; }
+
+/* トレンドグリッド */
+.trend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+@media (max-width: 720px) {
+    .trend-grid { grid-template-columns: 1fr; }
+}
+
 /* ===== ユーティリティ ===== */
 .hidden { display: none !important; }
 
