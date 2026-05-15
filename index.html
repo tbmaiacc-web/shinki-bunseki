@@ -70,23 +70,23 @@
         <div class="charts-grid">
             <div class="chart-card area-age">
                 <h3 class="chart-title">📅 年代分布（対応数 vs 購入数）</h3>
-                <div class="chart-wrap"><canvas id="chart-age"></canvas></div>
+                <div class="chart-wrap" data-chart="chart-age"><canvas id="chart-age"></canvas></div>
             </div>
             <div class="chart-card area-gender">
                 <h3 class="chart-title">👥 性別</h3>
-                <div class="chart-wrap"><canvas id="chart-gender"></canvas></div>
+                <div class="chart-wrap" data-chart="chart-gender"><canvas id="chart-gender"></canvas></div>
             </div>
             <div class="chart-card area-symptoms">
                 <h3 class="chart-title">🩺 症状別（対応数 vs 購入数）</h3>
-                <div class="chart-wrap chart-wrap-tall"><canvas id="chart-symptoms"></canvas></div>
+                <div class="chart-wrap chart-wrap-tall" data-chart="chart-symptoms"><canvas id="chart-symptoms"></canvas></div>
             </div>
             <div class="chart-card area-sameday">
                 <h3 class="chart-title">📣 媒体別 購入率</h3>
-                <div class="chart-wrap"><canvas id="chart-sameday"></canvas></div>
+                <div class="chart-wrap" data-chart="chart-sameday"><canvas id="chart-sameday"></canvas></div>
             </div>
             <div class="chart-card area-media">
                 <h3 class="chart-title">📊 媒体別 対応数</h3>
-                <div class="chart-wrap"><canvas id="chart-media"></canvas></div>
+                <div class="chart-wrap" data-chart="chart-media"><canvas id="chart-media"></canvas></div>
             </div>
         </div>
 
@@ -120,15 +120,15 @@
       <div class="trend-grid">
         <div class="chart-card" style="grid-column:1/-1">
           <h3 class="chart-title">📈 購入率の推移（1回券含まず）</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-rate"></canvas></div>
+          <div class="chart-wrap chart-wrap-tall" data-chart="chart-trend-rate"><canvas id="chart-trend-rate"></canvas></div>
         </div>
         <div class="chart-card">
           <h3 class="chart-title">👥 対応数の推移</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-count"></canvas></div>
+          <div class="chart-wrap chart-wrap-tall" data-chart="chart-trend-count"><canvas id="chart-trend-count"></canvas></div>
         </div>
         <div class="chart-card">
           <h3 class="chart-title">🩺 症状別 対応数（上位5）</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-symptoms"></canvas></div>
+          <div class="chart-wrap chart-wrap-tall" data-chart="chart-trend-symptoms"><canvas id="chart-trend-symptoms"></canvas></div>
         </div>
       </div>
       <div id="trend-summary"></div>
@@ -137,27 +137,27 @@
       <div class="trend-grid" style="margin-top:16px">
         <div class="chart-card">
           <h3 class="chart-title">👥 性別 購入率推移</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-gender-rate"></canvas></div>
+          <div class="chart-wrap chart-wrap-tall" data-chart="chart-trend-gender-rate"><canvas id="chart-trend-gender-rate"></canvas></div>
         </div>
         <div class="chart-card">
           <h3 class="chart-title">📣 媒体別 購入率推移</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-media-rate"></canvas></div>
+          <div class="chart-wrap chart-wrap-tall" data-chart="chart-trend-media-rate"><canvas id="chart-trend-media-rate"></canvas></div>
         </div>
         <div class="chart-card" style="grid-column:1/-1">
           <h3 class="chart-title">📅 年代別 購入率推移（全体）</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-age-rate"></canvas></div>
+          <div class="chart-wrap chart-wrap-tall" data-chart="chart-trend-age-rate"><canvas id="chart-trend-age-rate"></canvas></div>
         </div>
         <div class="chart-card">
           <h3 class="chart-title">📅 年代別 購入率推移（男性）</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-age-male-rate"></canvas></div>
+          <div class="chart-wrap chart-wrap-tall" data-chart="chart-trend-age-male-rate"><canvas id="chart-trend-age-male-rate"></canvas></div>
         </div>
         <div class="chart-card">
           <h3 class="chart-title">📅 年代別 購入率推移（女性）</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-age-female-rate"></canvas></div>
+          <div class="chart-wrap chart-wrap-tall" data-chart="chart-trend-age-female-rate"><canvas id="chart-trend-age-female-rate"></canvas></div>
         </div>
         <div class="chart-card" style="grid-column:1/-1">
           <h3 class="chart-title">🩺 症状別 購入率推移（上位5）</h3>
-          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-symptom-rate"></canvas></div>
+          <div class="chart-wrap chart-wrap-tall" data-chart="chart-trend-symptom-rate"><canvas id="chart-trend-symptom-rate"></canvas></div>
         </div>
       </div>
     </main>

@@ -601,15 +601,15 @@ function destroyCharts() {
 }
 
 function makeChart(id, config) {
-    // canvas を毎回作り直して確実にクリーンな状態にする
-    const wrap = document.getElementById(id)?.parentElement;
+    // data-chart属性で親を探す（noData後にcanvasが消えていても復元できる）
+    const wrap = document.querySelector(`[data-chart="${id}"]`);
     if (!wrap) return;
     wrap.innerHTML = `<canvas id="${id}"></canvas>`;
     state.charts[id] = new Chart(document.getElementById(id), config);
 }
 
 function noData(id) {
-    const wrap = document.getElementById(id)?.parentElement;
+    const wrap = document.querySelector(`[data-chart="${id}"]`);
     if (wrap) wrap.innerHTML = '<div class="no-data"><span>📭</span>データなし</div>';
 }
 
