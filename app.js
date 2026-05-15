@@ -1369,3 +1369,187 @@ async function exportPDF() {
 }
 
 document.getElementById('pdf-btn').addEventListener('click', exportPDF);
+
+// ==================== CSV出力 ====================
+function exportCSV() {
+    if (!state.months.length) return;
+
+    const therapistLabel = state.currentTherapist === 'all' ? '院合計' : state.currentTherapist;
+    const monthLabels    = state.months.map(m => abbreviatePeriod(m.period));
+
+    let csv = '';
+    const row  = (...cols) => cols.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',') + '\r\n';
+    const sep  = (title)   => row(title) + row();
+
+    // ========== ダッシュボード or 全期間トータル ==========
+    if (state.currentView === 'dashboard' || state.currentView === 'total') {
+
+        const isSingle = (state.currentView === 'dashboard');
+        const targetTherapists = isSingle
+            ? [state.currentTherapist]
+            : (state.totalTherapist === 'all' ? ['all', ...state.allTherapists] : [state.totalTherapist]);
+
+        targetTherapists.forEach(tk => {
+            const label   = tk === 'all' ? '院合計' : tk;
+            const dataKey = tk === 'all' ? '院合計' : tk;
+
+            // 月ごとのデータ（ダッシュボードは選択月のみ、全期間は全月）
+            const months = isSingle
+                ? [state.months[state.currentMonthIdx]].filter(Boolean)
+                : state.months;
+
+            csv += sep(`■ ${label}`);
+
+            // --- サマリー ---
+            csv += row('期間', '対応数', '購入数', '購入率', '男性', '女性');
+            months.forEach(m => {
+                const d = m.data[dataKey];
+                if (!d) { csv += row(abbreviatePeriod(m.period), '-', '-', '-', '-', '-'); return; }
+                csv += row(
+                    abbreviatePeriod(m.period),
+                    d.total.treated,
+                    d.total.purchase,
+                    d.total.rate !== null ? d.total.rate + '%' : '-',
+                    d.gender.male.treated,
+                    d.gender.female.treated,
+                );
+            });
+            csv += row();
+
+            // --- 年代別 ---
+            const ages = ['10代','20代','30代','40代','50代','60代','70代','80代','90代'];
+            csv += row('【年代別】', ...monthLabels.filter((_, i) => months[i]), '全期間合計');
+            ['対応数', '購入数', '購入率'].forEach(metric => {
+                ages.forEach(age => {
+                    const vals = months.map(m => {
+                        const c = m.data[dataKey]?.ageTotal[age];
+                        if (!c || c.treated === 0) return '-';
+                        return metric === '対応数' ? c.treated : metric === '購入数' ? c.purchase : (c.rate !== null ? c.rate + '%' : '-');
+                    });
+                    const allC = months.reduce((acc, m) => {
+                        const c = m.data[dataKey]?.ageTotal[age];
+                        if (c) { acc.t += c.treated; acc.p += c.purchase; }
+                        return acc;
+                    }, { t: 0, p: 0 });
+                    if (allC.t === 0) return;
+                    const total = metric === '対応数' ? allC.t : metric === '購入数' ? allC.p
+                                : (allC.t > 0 ? Math.round(allC.p / allC.t * 100) + '%' : '-');
+                    csv += row(`${age} ${metric}`, ...vals, total);
+                });
+            });
+            csv += row();
+
+            // --- 性別別 ---
+            csv += row('【性別別】', ...monthLabels.filter((_, i) => months[i]), '全期間合計');
+            [['男性','male'],['女性','female']].forEach(([label2, key2]) => {
+                ['対応数','購入数','購入率'].forEach(metric => {
+                    const vals = months.map(m => {
+                        const c = m.data[dataKey]?.gender[key2];
+                        if (!c || c.treated === 0) return '-';
+                        return metric === '対応数' ? c.treated : metric === '購入数' ? c.purchase : (c.rate !== null ? c.rate + '%' : '-');
+                    });
+                    const allC = months.reduce((acc, m) => {
+                        const c = m.data[dataKey]?.gender[key2];
+                        if (c) { acc.t += c.treated; acc.p += c.purchase; }
+                        return acc;
+                    }, { t: 0, p: 0 });
+                    if (allC.t === 0) return;
+                    const total = metric === '対応数' ? allC.t : metric === '購入数' ? allC.p
+                                : (allC.t > 0 ? Math.round(allC.p / allC.t * 100) + '%' : '-');
+                    csv += row(`${label2} ${metric}`, ...vals, total);
+                });
+            });
+            csv += row();
+
+            // --- 症状別 ---
+            const symptomSet = new Set();
+            months.forEach(m => Object.keys(m.data[dataKey]?.symptoms ?? {}).forEach(s => symptomSet.add(s)));
+            const symptoms = [...symptomSet];
+            if (symptoms.length) {
+                csv += row('【症状別】', ...monthLabels.filter((_, i) => months[i]), '全期間合計');
+                symptoms.forEach(sym => {
+                    ['対応数','購入数','購入率'].forEach(metric => {
+                        const vals = months.map(m => {
+                            const c = m.data[dataKey]?.symptoms[sym];
+                            if (!c || c.treated === 0) return '-';
+                            return metric === '対応数' ? c.treated : metric === '購入数' ? c.purchase : (c.rate !== null ? c.rate + '%' : '-');
+                        });
+                        const allC = months.reduce((acc, m) => {
+                            const c = m.data[dataKey]?.symptoms[sym];
+                            if (c) { acc.t += c.treated; acc.p += c.purchase; }
+                            return acc;
+                        }, { t: 0, p: 0 });
+                        if (allC.t === 0) return;
+                        const total = metric === '対応数' ? allC.t : metric === '購入数' ? allC.p
+                                    : (allC.t > 0 ? Math.round(allC.p / allC.t * 100) + '%' : '-');
+                        csv += row(`${sym} ${metric}`, ...vals, total);
+                    });
+                });
+                csv += row();
+            }
+
+            // --- 媒体別 ---
+            const mediaSet = new Set();
+            months.forEach(m => Object.keys(m.data[dataKey]?.media.total ?? {}).forEach(md => mediaSet.add(md)));
+            const medias = [...mediaSet];
+            if (medias.length) {
+                csv += row('【媒体別】', ...monthLabels.filter((_, i) => months[i]), '全期間合計');
+                medias.forEach(md => {
+                    ['対応数','購入数','購入率'].forEach(metric => {
+                        const vals = months.map(m => {
+                            const c = m.data[dataKey]?.media.total[md];
+                            if (!c || c.treated === 0) return '-';
+                            return metric === '対応数' ? c.treated : metric === '購入数' ? c.purchase : (c.rate !== null ? c.rate + '%' : '-');
+                        });
+                        const allC = months.reduce((acc, m) => {
+                            const c = m.data[dataKey]?.media.total[md];
+                            if (c) { acc.t += c.treated; acc.p += c.purchase; }
+                            return acc;
+                        }, { t: 0, p: 0 });
+                        if (allC.t === 0) return;
+                        const total = metric === '対応数' ? allC.t : metric === '購入数' ? allC.p
+                                    : (allC.t > 0 ? Math.round(allC.p / allC.t * 100) + '%' : '-');
+                        csv += row(`${md} ${metric}`, ...vals, total);
+                    });
+                });
+                csv += row();
+            }
+        });
+
+    // ========== 推移ビュー ==========
+    } else if (state.currentView === 'trend') {
+        csv += sep('■ 月別サマリー（推移）');
+        csv += row('期間', '対応数', '購入数', '購入率', ...state.allTherapists.flatMap(t => [`${t} 対応数`, `${t} 購入率`]));
+        state.months.forEach(m => {
+            const clinic = m.data['院合計'];
+            const therapistCols = state.allTherapists.flatMap(t => {
+                const td = m.data[t];
+                return [td?.total.treated ?? '-', td?.total.rate !== null && td?.total.rate !== undefined ? td.total.rate + '%' : '-'];
+            });
+            csv += row(
+                abbreviatePeriod(m.period),
+                clinic?.total.treated ?? '-',
+                clinic?.total.purchase ?? '-',
+                clinic?.total.rate !== null && clinic?.total.rate !== undefined ? clinic.total.rate + '%' : '-',
+                ...therapistCols,
+            );
+        });
+    }
+
+    // BOMを付けてExcelで文字化けしないようにする
+    const bom  = '﻿';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+
+    const viewLabel = state.currentView === 'trend' ? '推移'
+                    : state.currentView === 'total' ? '全期間'
+                    : 'ダッシュボード';
+    const periodStr = state.months.map(m => abbreviatePeriod(m.period)).join('_');
+    a.href     = url;
+    a.download = `${therapistLabel}_${viewLabel}_${periodStr}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+document.getElementById('csv-btn').addEventListener('click', exportCSV);
