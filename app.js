@@ -54,13 +54,11 @@ function emptyData() {
 
 // ==================== CSV アップロード ====================
 document.getElementById('csv-input').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (file) handleFile(file);
+    handleFiles([...e.target.files]);
 });
 
 document.getElementById('add-month-input').addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (file) handleFile(file);
+    handleFiles([...e.target.files]);
     e.target.value = '';
 });
 
@@ -74,8 +72,7 @@ uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag
 uploadArea.addEventListener('drop', e => {
     e.preventDefault();
     uploadArea.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    handleFiles([...e.dataTransfer.files].filter(f => f.name.endsWith('.csv')));
 });
 
 document.getElementById('sample-btn').addEventListener('click', () => loadCSVText(SAMPLE_CSV, '伊勢崎宮子院 2026年4月'));
@@ -92,20 +89,31 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     document.getElementById('csv-input').value = '';
 });
 
-function handleFile(file) {
+// 複数ファイルを順番に読み込む
+function handleFiles(files) {
+    if (!files.length) return;
+    let i = 0;
+    function next() {
+        if (i >= files.length) return;
+        handleFile(files[i++], next);
+    }
+    next();
+}
+
+function handleFile(file, onDone) {
     const name = file.name.replace(/\.csv$/i, '');
 
     function tryLoad(encoding) {
         const reader = new FileReader();
         reader.onload = e => {
             const text = e.target.result;
-            // 文字化けチェック（?が多い場合は別エンコーディングで再試行）
             if (encoding === 'utf-8' && (text.includes('�') || /\?{5,}/.test(text))) {
                 tryLoad('shift-jis');
                 return;
             }
             try { loadCSVText(text, name); }
             catch (err) { alert('CSV読み込みエラー: ' + err.message); }
+            finally { if (onDone) onDone(); }
         };
         reader.readAsText(file, encoding);
     }
