@@ -130,6 +130,31 @@
       </div>
       <div id="trend-summary"></div>
     </main>
+
+    <!-- ===== 全期間トータル ===== -->
+    <main id="total-main" class="dashboard-main hidden">
+      <div class="total-controls">
+        <span class="total-label">表示対象：</span>
+        <div id="total-therapist-tabs" class="total-therapist-tabs"></div>
+      </div>
+      <div id="total-stats-bar" class="stats-bar" style="margin-bottom:20px"></div>
+      <div class="segment-section">
+        <div class="segment-header">
+          <h2>📊 全期間 得意・苦手（購入率推移）</h2>
+          <div class="threshold-controls">
+            <div class="threshold-item">
+              <label><span class="badge-good">得意</span> 購入率 <span id="good-val2">50</span>% 以上</label>
+              <input type="range" id="good-threshold2" min="10" max="90" value="50" step="5">
+            </div>
+            <div class="threshold-item">
+              <label><span class="badge-bad">苦手</span> 購入率 <span id="bad-val2">30</span>% 以下</label>
+              <input type="range" id="bad-threshold2" min="10" max="90" value="30" step="5">
+            </div>
+          </div>
+        </div>
+        <div id="total-trend-tables"></div>
+      </div>
+    </main>
 </div>
 
 <script src="app.js"></script>

@@ -449,6 +449,49 @@ body {
 /* ===== ユーティリティ ===== */
 .hidden { display: none !important; }
 
+/* ===== 全期間トータルページ ===== */
+.total-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.total-label { font-size: 0.9rem; font-weight: 600; color: #374151; white-space: nowrap; }
+.total-therapist-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.total-therapist-btn {
+    padding: 6px 16px;
+    border: 1px solid #CBD5E1;
+    border-radius: 20px;
+    background: #F8FAFC;
+    color: #374151;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.total-therapist-btn:hover { background: #E2E8F0; }
+.total-therapist-btn.active { background: #4F46E5; border-color: #4F46E5; color: #fff; font-weight: 600; }
+
+/* 推移テーブル（月カラム付き） */
+.trend-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; }
+.trend-table-wrap table { min-width: 400px; width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+.trend-table-wrap th {
+    background: #F8FAFC; color: #64748B; font-weight: 600;
+    padding: 7px 10px; text-align: center;
+    border-bottom: 1px solid #E2E8F0; white-space: nowrap;
+}
+.trend-table-wrap th:first-child { text-align: left; }
+.trend-table-wrap td { padding: 7px 10px; border-bottom: 1px solid #F1F5F9; text-align: center; white-space: nowrap; }
+.trend-table-wrap td:first-child { text-align: left; white-space: normal; max-width: 160px; }
+.trend-table-wrap tr:last-child td { border-bottom: none; }
+.trend-table-wrap tr.row-good { background: #F0FDF4; }
+.trend-table-wrap tr.row-bad  { background: #FFF5F5; }
+.trend-table-wrap tr:hover { background: #F8FAFC; }
+.trend-table-wrap tr.row-good:hover { background: #DCFCE7; }
+.trend-table-wrap tr.row-bad:hover  { background: #FEE2E2; }
+.trend-null { color: #CBD5E1; }
+.trend-total-col { font-weight: 700; border-left: 2px solid #E2E8F0; }
+
 /* ===== レスポンシブ ===== */
 @media (max-width: 720px) {
     .charts-grid {

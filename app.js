@@ -8,7 +8,8 @@ const state = {
     allTherapists: [],      // 全月のセラピスト名の和集合
     currentMonthIdx: 0,     // ダッシュボードで表示中の月のインデックス
     currentTherapist: 'all',
-    currentView: 'dashboard', // 'dashboard' | 'trend'
+    totalTherapist: 'all',
+    currentView: 'dashboard', // 'dashboard' | 'trend' | 'total'
     charts: {},
     goodThreshold: 50,
     badThreshold: 30,
@@ -167,6 +168,8 @@ function loadCSVText(text, title) {
         showDashboard();
     } else if (state.currentView === 'trend') {
         showTrend();
+    } else if (state.currentView === 'total') {
+        showTotal();
     }
 }
 
@@ -214,6 +217,8 @@ function renderMonthsBar() {
             renderTabs();
             if (state.currentView === 'trend') {
                 showTrend();
+            } else if (state.currentView === 'total') {
+                showTotal();
             } else {
                 showDashboard();
             }
@@ -476,19 +481,24 @@ function renderTabs() {
     el.innerHTML = '';
 
     const entries = [['all', '🏠 全員まとめ（院合計）'], ...state.allTherapists.map(n => [n, n])];
+    if (state.months.length >= 2) entries.push(['__total__', '📊 全期間']);
     if (state.months.length >= 2) entries.push(['__trend__', '📈 推移']);
 
     entries.forEach(([key, label]) => {
         const btn = document.createElement('button');
-        const isActive = key === '__trend__'
-            ? state.currentView === 'trend'
-            : state.currentView === 'dashboard' && key === state.currentTherapist;
+        const isActive = key === '__trend__'  ? state.currentView === 'trend'
+                       : key === '__total__'  ? state.currentView === 'total'
+                       : state.currentView === 'dashboard' && key === state.currentTherapist;
         btn.className = 'tab' + (isActive ? ' active' : '');
         btn.textContent = label;
         btn.addEventListener('click', () => {
             el.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
-            if (key === '__trend__') {
+            if (key === '__total__') {
+                state.currentView = 'total';
+                renderMonthsBar();
+                showTotal();
+            } else if (key === '__trend__') {
                 state.currentView = 'trend';
                 renderMonthsBar();
                 showTrend();
@@ -506,13 +516,22 @@ function renderTabs() {
 function showDashboard() {
     document.getElementById('dashboard-main').classList.remove('hidden');
     document.getElementById('trend-main').classList.add('hidden');
+    document.getElementById('total-main').classList.add('hidden');
     renderDashboard(state.currentTherapist);
 }
 
 function showTrend() {
     document.getElementById('dashboard-main').classList.add('hidden');
     document.getElementById('trend-main').classList.remove('hidden');
+    document.getElementById('total-main').classList.add('hidden');
     renderTrendView();
+}
+
+function showTotal() {
+    document.getElementById('dashboard-main').classList.add('hidden');
+    document.getElementById('trend-main').classList.add('hidden');
+    document.getElementById('total-main').classList.remove('hidden');
+    renderTotalView(state.totalTherapist);
 }
 
 // ==================== ダッシュボード ====================
@@ -901,7 +920,7 @@ function renderTrendView() {
         </div>`;
 }
 
-// 閾値スライダー
+// 閾値スライダー（月次ダッシュボード用）
 ['good', 'bad'].forEach(type => {
     document.getElementById(`${type}-threshold`).addEventListener('input', function() {
         state[`${type}Threshold`] = +this.value;
@@ -914,6 +933,209 @@ function renderTrendView() {
         if (d) { renderMediaRateChart(d); renderTable(d); }
     });
 });
+
+// 閾値スライダー（全期間ページ用）
+['good', 'bad'].forEach(type => {
+    document.getElementById(`${type}-threshold2`).addEventListener('input', function() {
+        state[`${type}Threshold`] = +this.value;
+        // 両スライダーを同期
+        document.getElementById(`${type}-threshold`).value = this.value;
+        document.getElementById(`${type}-val`).textContent = this.value;
+        document.getElementById(`${type}-val2`).textContent = this.value;
+        if (state.currentView === 'total') renderTotalView(state.totalTherapist);
+    });
+});
+
+// ==================== 全期間トータルページ ====================
+
+// 全月のデータを集計して emptyData 構造で返す
+function aggregateMonths(dataKey) {
+    const agg = emptyData();
+    const calcRate = c => { if (c.treated > 0) c.rate = Math.round(c.purchase / c.treated * 100); };
+
+    for (const month of state.months) {
+        const d = month.data[dataKey];
+        if (!d) continue;
+
+        agg.total.purchase += d.total.purchase;
+        agg.total.treated  += d.total.treated;
+
+        ['male', 'female'].forEach(g => {
+            agg.gender[g].purchase += d.gender[g].purchase;
+            agg.gender[g].treated  += d.gender[g].treated;
+        });
+
+        Object.entries(d.ageTotal).forEach(([a, c]) => {
+            if (!agg.ageTotal[a]) agg.ageTotal[a] = { purchase: 0, treated: 0, rate: null };
+            agg.ageTotal[a].purchase += c.purchase;
+            agg.ageTotal[a].treated  += c.treated;
+        });
+
+        ['male', 'female'].forEach(g => {
+            Object.entries(d.ageByGender[g]).forEach(([a, c]) => {
+                if (!agg.ageByGender[g][a]) agg.ageByGender[g][a] = { purchase: 0, treated: 0, rate: null };
+                agg.ageByGender[g][a].purchase += c.purchase;
+                agg.ageByGender[g][a].treated  += c.treated;
+            });
+        });
+
+        ['total', 'male', 'female'].forEach(seg => {
+            Object.entries(d.media[seg]).forEach(([k, c]) => {
+                if (!agg.media[seg][k]) agg.media[seg][k] = { purchase: 0, treated: 0, rate: null };
+                agg.media[seg][k].purchase += c.purchase;
+                agg.media[seg][k].treated  += c.treated;
+            });
+        });
+
+        Object.entries(d.symptoms).forEach(([s, c]) => {
+            if (!agg.symptoms[s]) agg.symptoms[s] = { purchase: 0, treated: 0, rate: null };
+            agg.symptoms[s].purchase += c.purchase;
+            agg.symptoms[s].treated  += c.treated;
+        });
+    }
+
+    calcRate(agg.total);
+    ['male', 'female'].forEach(g => calcRate(agg.gender[g]));
+    Object.values(agg.ageTotal).forEach(calcRate);
+    Object.values(agg.ageByGender.male).forEach(calcRate);
+    Object.values(agg.ageByGender.female).forEach(calcRate);
+    ['total', 'male', 'female'].forEach(seg => Object.values(agg.media[seg]).forEach(calcRate));
+    Object.values(agg.symptoms).forEach(calcRate);
+
+    return agg;
+}
+
+// 各カテゴリの月別購入率配列を構築
+function buildTrendData(dataKey) {
+    const AGE_ORDER = ['10代', '20代', '30代', '40代', '50代', '60代', '70代', '80代', '90代'];
+    const allAges = new Set(), allSymptoms = new Set(), allMedia = new Set();
+
+    state.months.forEach(m => {
+        const d = m.data[dataKey];
+        if (!d) return;
+        Object.keys(d.ageTotal).filter(a => d.ageTotal[a].treated > 0).forEach(a => allAges.add(a));
+        Object.keys(d.symptoms).filter(s => d.symptoms[s].treated > 0).forEach(s => allSymptoms.add(s));
+        Object.keys(d.media.total).filter(k => d.media.total[k].treated > 0).forEach(k => allMedia.add(k));
+    });
+
+    const ages = AGE_ORDER.filter(a => allAges.has(a));
+
+    // 症状は全期間の対応数合計で降順ソート
+    const symTotals = {};
+    state.months.forEach(m => {
+        const d = m.data[dataKey];
+        if (!d) return;
+        Object.entries(d.symptoms).forEach(([s, c]) => { symTotals[s] = (symTotals[s] || 0) + c.treated; });
+    });
+    const symptoms = [...allSymptoms].sort((a, b) => (symTotals[b] || 0) - (symTotals[a] || 0));
+    const media = [...allMedia];
+
+    function buildRows(cats, getter) {
+        return cats.map(cat => {
+            let totalPurchase = 0, totalTreated = 0;
+            const monthRates = state.months.map(m => {
+                const d = m.data[dataKey];
+                const c = d ? getter(d, cat) : null;
+                if (c && c.treated > 0) {
+                    totalPurchase += c.purchase;
+                    totalTreated  += c.treated;
+                    return c.rate;
+                }
+                return null;
+            });
+            const totalRate = totalTreated > 0 ? Math.round(totalPurchase / totalTreated * 100) : null;
+            return { cat, monthRates, totalPurchase, totalTreated, totalRate };
+        }).filter(r => r.totalTreated > 0);
+    }
+
+    return {
+        ages:     buildRows(ages,     (d, cat) => d.ageTotal[cat]),
+        symptoms: buildRows(symptoms, (d, cat) => d.symptoms[cat]),
+        media:    buildRows(media,    (d, cat) => d.media.total[cat]),
+    };
+}
+
+// 月別購入率推移テーブルのHTML生成
+function trendTableBlock(title, rows, monthLabels) {
+    if (!rows.length) return '';
+    const good = state.goodThreshold, bad = state.badThreshold;
+
+    const headerCols = ['カテゴリ', ...monthLabels, '全期間', '判定'].map((h, i) => {
+        const cls = i === monthLabels.length + 1 ? ' class="trend-total-col"' : '';
+        return `<th${cls}>${h}</th>`;
+    }).join('');
+
+    const trs = rows.map(({ cat, monthRates, totalPurchase, totalTreated, totalRate }) => {
+        const cls = totalRate !== null ? (totalRate >= good ? 'row-good' : totalRate <= bad ? 'row-bad' : '') : '';
+
+        const monthCells = monthRates.map(r => {
+            if (r === null) return '<td class="trend-null">-</td>';
+            const color = r >= good ? '#10B981' : r <= bad ? '#EF4444' : '#64748B';
+            return `<td style="color:${color};font-weight:600">${r}%</td>`;
+        }).join('');
+
+        const totalColor = totalRate !== null ? (totalRate >= good ? '#10B981' : totalRate <= bad ? '#EF4444' : '#64748B') : '#94A3B8';
+        const badge = totalRate !== null
+            ? (totalRate >= good ? '<span class="badge-good">得意</span>' : totalRate <= bad ? '<span class="badge-bad">苦手</span>' : '<span class="badge-neutral">中間</span>')
+            : '<span class="badge-neutral">-</span>';
+
+        return `<tr class="${cls}">
+            <td>${cat}</td>
+            ${monthCells}
+            <td class="trend-total-col" style="color:${totalColor}">${totalRate !== null ? totalRate + '%' : '-'}<br><span class="of-total">${totalPurchase}/${totalTreated}</span></td>
+            <td>${badge}</td>
+        </tr>`;
+    }).join('');
+
+    return `<div class="trend-table-wrap">
+        <h4 style="font-size:0.82rem;font-weight:700;color:#64748B;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:8px;">${title}</h4>
+        <table><thead><tr>${headerCols}</tr></thead><tbody>${trs}</tbody></table>
+    </div>`;
+}
+
+// 全期間ページ描画
+function renderTotalView(therapistKey) {
+    state.totalTherapist = therapistKey;
+    const dataKey = therapistKey === 'all' ? '院合計' : therapistKey;
+    const agg = aggregateMonths(dataKey);
+    const monthLabels = state.months.map(m => abbreviatePeriod(m.period));
+
+    // セラピスト選択ボタン
+    const tTabs = document.getElementById('total-therapist-tabs');
+    const options = ['all', ...state.allTherapists];
+    tTabs.innerHTML = options.map(t => `
+        <button class="total-therapist-btn${t === therapistKey ? ' active' : ''}" data-key="${t}">
+            ${t === 'all' ? '院合計' : t}
+        </button>`).join('');
+    tTabs.querySelectorAll('.total-therapist-btn').forEach(btn => {
+        btn.addEventListener('click', () => renderTotalView(btn.dataset.key));
+    });
+
+    // サマリーバー
+    const t = agg.total;
+    const m = agg.gender.male.treated, f = agg.gender.female.treated;
+    const gTotal = (m + f) || 1;
+    document.getElementById('total-stats-bar').innerHTML = [
+        { label: '累計対応数（全期間）', value: t.treated + '人' },
+        { label: '累計購入数',           value: t.purchase + '人' },
+        { label: '全期間 購入率',         value: t.rate !== null ? t.rate + '%' : '-' },
+        { label: '月平均対応数',          value: Math.round(t.treated / (state.months.length || 1)) + '人' },
+        { label: '男性',                  value: m + '人', sub: Math.round(m / gTotal * 100) + '%' },
+        { label: '女性',                  value: f + '人', sub: Math.round(f / gTotal * 100) + '%' },
+    ].map(s => `<div class="stat-card">
+        <div class="stat-label">${s.label}</div>
+        <div class="stat-value">${s.value}</div>
+        ${s.sub ? `<div class="stat-sub">${s.sub}</div>` : ''}
+    </div>`).join('');
+
+    // 推移テーブル
+    const td = buildTrendData(dataKey);
+    document.getElementById('total-trend-tables').innerHTML = [
+        trendTableBlock('年代別 購入率推移',   td.ages,     monthLabels),
+        trendTableBlock('症状別 購入率推移',   td.symptoms, monthLabels),
+        trendTableBlock('媒体別 購入率推移',   td.media,    monthLabels),
+    ].filter(Boolean).join('');
+}
 
 // ==================== サンプルデータ ====================
 const SAMPLE_CSV = `詳細分析,清家,,1回券含まず,富澤,,1回券含まず,,,1回券含まず,院合計,,1回券含まず,,
