@@ -1264,3 +1264,108 @@ PMS・月経前症候群,,,#DIV/0!,,,#DIV/0!,,,#DIV/0!,0,1,0%,4%,
 脳梗塞後遺症,,,#DIV/0!,,,#DIV/0!,,,#DIV/0!,,,#DIV/0!,0%,
 その他,,,#DIV/0!,1,1,100%,,,#DIV/0!,1,1,100%,4%,
 ,,11,,,13,,,,,,,,,`;
+
+// ==================== PDF出力 ====================
+async function exportPDF() {
+    const btn = document.getElementById('pdf-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ 生成中...';
+
+    try {
+        const { jsPDF } = window.jspdf;
+
+        // 現在表示中のビューを特定
+        const viewId = state.currentView === 'trend'  ? 'trend-main'
+                     : state.currentView === 'total'  ? 'total-main'
+                     : 'dashboard-main';
+        const mainEl = document.getElementById(viewId);
+
+        // ページタイトル文字列
+        const viewLabel = state.currentView === 'trend'  ? '推移'
+                        : state.currentView === 'total'  ? '全期間トータル'
+                        : 'ダッシュボード';
+        const therapist = state.currentTherapist === 'all' ? '院合計' : state.currentTherapist;
+        const monthLabel = state.months.length === 1
+            ? abbreviatePeriod(state.months[0].period)
+            : state.months.map(m => abbreviatePeriod(m.period)).join('・');
+        const docTitle = `${therapist} ${viewLabel} ${monthLabel}`;
+
+        // A4 サイズ定数（mm）
+        const PAGE_W = 210, PAGE_H = 297;
+        const MARGIN  = 10;   // 上下左右マージン(mm)
+        const HEADER_H = 12;  // ヘッダー行の高さ(mm)
+        const CONTENT_W = PAGE_W - MARGIN * 2;   // 印刷領域の幅
+        const CONTENT_H = PAGE_H - MARGIN * 2 - HEADER_H; // 1ページ分の印刷高さ
+
+        // html2canvas でキャプチャ（解像度2倍）
+        const canvas = await html2canvas(mainEl, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#F8FAFC',
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: mainEl.scrollWidth,
+            windowHeight: mainEl.scrollHeight,
+        });
+
+        const imgW = canvas.width;
+        const imgH = canvas.height;
+
+        // mm単位での画像全体の高さを算出
+        const imgMmH = (imgH / imgW) * CONTENT_W;
+
+        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const totalPages = Math.ceil(imgMmH / CONTENT_H);
+
+        for (let page = 0; page < totalPages; page++) {
+            if (page > 0) pdf.addPage();
+
+            // ページヘッダー（タイトルとページ番号）
+            pdf.setFillColor(79, 70, 229);
+            pdf.rect(MARGIN, MARGIN, CONTENT_W, HEADER_H - 2, 'F');
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(9);
+            pdf.text(docTitle, MARGIN + 3, MARGIN + 7);
+            pdf.setFontSize(8);
+            pdf.text(`${page + 1} / ${totalPages}`, PAGE_W - MARGIN - 3, MARGIN + 7, { align: 'right' });
+            pdf.setTextColor(0, 0, 0);
+
+            // このページに描画するキャンバス上のY範囲（px）
+            const pxPerMm = imgW / CONTENT_W;
+            const srcY    = page * CONTENT_H * pxPerMm;
+            const srcH    = Math.min(CONTENT_H * pxPerMm, imgH - srcY);
+
+            if (srcH <= 0) break;
+
+            // 対象スライスをオフスクリーンキャンバスに切り出す
+            const slice = document.createElement('canvas');
+            slice.width  = imgW;
+            slice.height = srcH;
+            slice.getContext('2d').drawImage(canvas, 0, srcY, imgW, srcH, 0, 0, imgW, srcH);
+
+            const sliceData = slice.toDataURL('image/jpeg', 0.92);
+            const sliceH_mm = (srcH / pxPerMm); // 実際の高さ(mm)
+
+            pdf.addImage(
+                sliceData, 'JPEG',
+                MARGIN,
+                MARGIN + HEADER_H,
+                CONTENT_W,
+                sliceH_mm
+            );
+        }
+
+        // ファイル名生成（スペースをアンダースコアに）
+        const fileName = `${docTitle.replace(/\s+/g, '_')}.pdf`;
+        pdf.save(fileName);
+
+    } catch (e) {
+        console.error('PDF出力エラー:', e);
+        alert('PDF出力に失敗しました。\n' + e.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '📄 PDF出力';
+    }
+}
+
+document.getElementById('pdf-btn').addEventListener('click', exportPDF);
