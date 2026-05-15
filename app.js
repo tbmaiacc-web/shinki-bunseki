@@ -1048,10 +1048,27 @@ function buildTrendData(dataKey) {
         }).filter(r => r.totalTreated > 0);
     }
 
+    // 性別（男性・女性を行として扱う）
+    const genderRows = [['男性', 'male'], ['女性', 'female']].map(([label, key]) => {
+        let totalPurchase = 0, totalTreated = 0;
+        const monthRates = state.months.map(m => {
+            const d = m.data[dataKey];
+            if (!d) return null;
+            const c = d.gender[key];
+            if (c.treated > 0) { totalPurchase += c.purchase; totalTreated += c.treated; return c.rate; }
+            return null;
+        });
+        const totalRate = totalTreated > 0 ? Math.round(totalPurchase / totalTreated * 100) : null;
+        return { cat: label, monthRates, totalPurchase, totalTreated, totalRate };
+    }).filter(r => r.totalTreated > 0);
+
     return {
-        ages:     buildRows(ages,     (d, cat) => d.ageTotal[cat]),
-        symptoms: buildRows(symptoms, (d, cat) => d.symptoms[cat]),
-        media:    buildRows(media,    (d, cat) => d.media.total[cat]),
+        gender:     genderRows,
+        ages:       buildRows(ages,     (d, cat) => d.ageTotal[cat]),
+        agesMale:   buildRows(ages,     (d, cat) => d.ageByGender.male[cat]),
+        agesFemale: buildRows(ages,     (d, cat) => d.ageByGender.female[cat]),
+        symptoms:   buildRows(symptoms, (d, cat) => d.symptoms[cat]),
+        media:      buildRows(media,    (d, cat) => d.media.total[cat]),
     };
 }
 
@@ -1131,9 +1148,12 @@ function renderTotalView(therapistKey) {
     // 推移テーブル
     const td = buildTrendData(dataKey);
     document.getElementById('total-trend-tables').innerHTML = [
-        trendTableBlock('年代別 購入率推移',   td.ages,     monthLabels),
-        trendTableBlock('症状別 購入率推移',   td.symptoms, monthLabels),
-        trendTableBlock('媒体別 購入率推移',   td.media,    monthLabels),
+        trendTableBlock('性別 購入率推移',         td.gender,     monthLabels),
+        trendTableBlock('年代別 購入率推移（全体）', td.ages,       monthLabels),
+        trendTableBlock('年代別 購入率推移（男性）', td.agesMale,   monthLabels),
+        trendTableBlock('年代別 購入率推移（女性）', td.agesFemale, monthLabels),
+        trendTableBlock('症状別 購入率推移',         td.symptoms,   monthLabels),
+        trendTableBlock('媒体別 購入率推移',         td.media,      monthLabels),
     ].filter(Boolean).join('');
 }
 
