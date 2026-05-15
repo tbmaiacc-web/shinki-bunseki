@@ -273,16 +273,29 @@ function toHalfWidth(s) {
 }
 
 // ==================== 生データ CSV パース（新規購入内訳） ====================
-// 列: 日付(0), 名前(1), 年代(2), 性別(3), セラピスト(4), 症状(5), 問い合わせ媒体(6), 当日希望(7), 回数券(8)
-// 年代: 数字 1桁 (例: 5 → '50代')
+// ヘッダー行から列位置を自動検出（前橋院・草加院など複数フォーマット対応）
+// 年代: 「50代」「5」「40〜49歳」→ すべて「50代」形式に統一
 // 購入(1回券含まず): 回数券が 2 以上の整数のとき
 function parseRawCSV(rows) {
+    // ---- ヘッダーから列インデックスを自動検出 ----
+    const header = rows[0] || [];
+    const C = { therapist: 4, gender: 3, age: 2, symptom: 5, media: 6, kaiken: 8 }; // デフォルト
+    header.forEach((cell, i) => {
+        const v = String(cell ?? '').trim();
+        if (/セラピスト|担当者/.test(v))              C.therapist = i;
+        else if (v === '性別')                        C.gender    = i;
+        else if (/^年代/.test(v))                     C.age       = i;
+        else if (/^症状/.test(v))                     C.symptom   = i;
+        else if (/媒体|問い合わせ/.test(v))            C.media     = i;
+        else if (/回数券/.test(v) && C.kaiken === 8)  C.kaiken    = i; // 最初の回数券列
+    });
+
     const therapistSet = new Set();
     const patientRows  = [];
 
     for (const row of rows) {
         if (!isDateCell(String(row[0] ?? '').trim())) continue;
-        const therapist = String(row[4] ?? '').trim();
+        const therapist = String(row[C.therapist] ?? '').trim();
         if (!therapist) continue;
         therapistSet.add(therapist);
         patientRows.push(row);
@@ -296,22 +309,25 @@ function parseRawCSV(rows) {
     data['院合計'] = emptyData();
 
     for (const row of patientRows) {
-        const therapist  = String(row[4] ?? '').trim();
-        const genderRaw  = String(row[3] ?? '').trim();
-        const ageRaw     = String(row[2] ?? '').trim();
-        const symptom    = String(row[5] ?? '').trim();
-        const media      = String(row[6] ?? '').trim();
-        const kaikenRaw  = String(row[8] ?? '').trim();
+        const therapist  = String(row[C.therapist] ?? '').trim();
+        const genderRaw  = String(row[C.gender]    ?? '').trim();
+        const ageRaw     = toHalfWidth(String(row[C.age] ?? '').trim());
+        const symptom    = String(row[C.symptom]   ?? '').trim();
+        const media      = String(row[C.media]     ?? '').trim();
+        const kaikenRaw  = String(row[C.kaiken]    ?? '').trim();
 
         const gender = genderRaw === '男性' ? 'male' : genderRaw === '女性' ? 'female' : null;
 
-        // 年代: 「50代」そのまま or 数字1桁「5」→「50代」に統一
+        // 年代統一: 「50代」「5」「40〜49歳」→「50代」
         let age = null;
         if (/^\d+代$/.test(ageRaw)) {
-            age = ageRaw; // 「50代」形式はそのまま
+            age = ageRaw;                                          // 「50代」そのまま
         } else {
-            const ageNum = parseInt(toHalfWidth(ageRaw), 10);
-            if (!isNaN(ageNum) && ageNum > 0) age = (ageNum <= 9 ? ageNum * 10 : ageNum) + '代';
+            const m = ageRaw.match(/^(\d+)/);                     // 先頭の数字を抽出
+            if (m) {
+                const n = parseInt(m[1], 10);
+                age = (n <= 9 ? n * 10 : n) + '代';               // 「5」→50代 / 「40」→40代
+            }
         }
 
         // 2回以上の回数券のみ「購入」とカウント（1回券・初回のみ除外）
