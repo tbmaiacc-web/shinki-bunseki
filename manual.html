@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>セラピスト別顧客分析ツール｜取扱説明書</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background: #F0F4F8;
+            color: #1E293B;
+            line-height: 1.8;
+        }
+
+        /* ===== ヘッダー ===== */
+        .hero {
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            color: white;
+            padding: 60px 24px 50px;
+            text-align: center;
+        }
+        .hero-icon { font-size: 3.5rem; display: block; margin-bottom: 16px; }
+        .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 8px; }
+        .hero p { font-size: 1.05rem; opacity: 0.85; max-width: 540px; margin: 0 auto; }
+
+        /* ===== 目次 ===== */
+        .toc {
+            background: white;
+            max-width: 820px;
+            margin: 32px auto;
+            border-radius: 16px;
+            padding: 28px 32px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        }
+        .toc h2 { font-size: 1rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; }
+        .toc ol { padding-left: 20px; }
+        .toc li { margin-bottom: 8px; }
+        .toc a { color: #4F46E5; text-decoration: none; font-weight: 600; }
+        .toc a:hover { text-decoration: underline; }
+
+        /* ===== セクション ===== */
+        .section {
+            max-width: 820px;
+            margin: 0 auto 40px;
+            background: white;
+            border-radius: 16px;
+            padding: 36px 40px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        }
+
+        .section-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: #4F46E5;
+            color: white;
+            font-weight: 800;
+            font-size: 1rem;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+        .section-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .section-title h2 {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #1E293B;
+        }
+
+        /* ===== ステップ ===== */
+        .steps { display: flex; flex-direction: column; gap: 20px; }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+        .step-num {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: #EEF2FF;
+            color: #4F46E5;
+            font-weight: 800;
+            font-size: 0.9rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .step-body h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1E293B;
+            margin-bottom: 4px;
+        }
+        .step-body p { color: #475569; font-size: 0.95rem; }
+
+        /* ===== モックUI ===== */
+        .mock-screen {
+            background: #F8FAFC;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            position: relative;
+        }
+        .mock-screen::before {
+            content: attr(data-label);
+            position: absolute;
+            top: -12px;
+            left: 16px;
+            background: #4F46E5;
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.04em;
+        }
+
+        .mock-header {
+            background: #1E293B;
+            border-radius: 8px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .mock-header span { color: white; font-weight: 700; font-size: 0.9rem; }
+        .mock-btn {
+            display: inline-block;
+            background: #334155;
+            color: #E2E8F0;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            margin-left: auto;
+        }
+        .mock-btn + .mock-btn { margin-left: 6px; }
+        .mock-btn.highlight { background: #4F46E5; color: white; }
+
+        .mock-upload {
+            border: 2.5px dashed #A5B4FC;
+            border-radius: 10px;
+            padding: 28px;
+            text-align: center;
+            background: #EEF2FF;
+        }
+        .mock-upload p { color: #6366F1; font-weight: 600; font-size: 0.9rem; }
+        .mock-upload .or { color: #94A3B8; font-size: 0.8rem; margin: 6px 0; }
+
+        .mock-chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        .mock-chip {
+            background: #EEF2FF;
+            color: #4F46E5;
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .mock-chip.active {
+            background: #4F46E5;
+            color: white;
+        }
+
+        .mock-tabs {
+            display: flex;
+            gap: 4px;
+            border-bottom: 2px solid #E2E8F0;
+            margin-bottom: 12px;
+        }
+        .mock-tab {
+            padding: 6px 14px;
+            border-radius: 6px 6px 0 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #94A3B8;
+            background: #F1F5F9;
+        }
+        .mock-tab.active {
+            background: #4F46E5;
+            color: white;
+        }
+
+        .mock-charts {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .mock-chart {
+            background: white;
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px solid #E2E8F0;
+        }
+        .mock-chart-title { font-size: 0.72rem; font-weight: 700; color: #64748B; margin-bottom: 8px; }
+        .mock-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        .mock-bar-label { font-size: 0.65rem; color: #64748B; width: 28px; text-align: right; }
+        .mock-bar {
+            height: 10px;
+            border-radius: 3px;
+            background: #818CF8;
+        }
+        .mock-bar.green { background: #34D399; }
+        .mock-bar.amber { background: #FBBF24; }
+        .mock-bar.pink  { background: #F472B6; }
+
+        .mock-donut {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: conic-gradient(#818CF8 0% 55%, #F472B6 55% 100%);
+            margin: 6px auto;
+            position: relative;
+        }
+        .mock-donut::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+            width: 30px; height: 30px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .mock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+        }
+        .mock-table th {
+            background: #F1F5F9;
+            color: #64748B;
+            padding: 4px 8px;
+            text-align: left;
+            border: 1px solid #E2E8F0;
+        }
+        .mock-table td {
+            padding: 4px 8px;
+            border: 1px solid #E2E8F0;
+        }
+        .row-good { background: #F0FDF4; color: #065F46; font-weight: 700; }
+        .row-bad  { background: #FFF1F2; color: #9F1239; font-weight: 700; }
+
+        .mock-line-chart {
+            height: 70px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #E2E8F0;
+            padding: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+        .line-path {
+            position: absolute;
+            bottom: 8px; left: 8px; right: 8px;
+            height: 50px;
+        }
+
+        /* ===== ヒント・注意 ===== */
+        .tip, .warn, .point {
+            display: flex;
+            gap: 12px;
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin: 16px 0;
+            font-size: 0.92rem;
+        }
+        .tip   { background: #EEF2FF; border-left: 4px solid #6366F1; }
+        .warn  { background: #FFF7ED; border-left: 4px solid #F59E0B; }
+        .point { background: #F0FDF4; border-left: 4px solid #10B981; }
+        .tip-icon, .warn-icon, .point-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+        .tip p, .warn p, .point p { color: #334155; }
+        .tip strong, .warn strong, .point strong { color: #1E293B; }
+
+        /* ===== 用語集 ===== */
+        .glossary { display: flex; flex-direction: column; gap: 12px; }
+        .glossary-item { display: flex; gap: 16px; align-items: flex-start; }
+        .glossary-term {
+            flex-shrink: 0;
+            background: #4F46E5;
+            color: white;
+            padding: 3px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .glossary-desc { color: #475569; font-size: 0.92rem; }
+
+        /* ===== FAQ ===== */
+        .faq { display: flex; flex-direction: column; gap: 16px; }
+        .faq-item {}
+        .faq-q {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+        .faq-q-mark {
+            flex-shrink: 0;
+            width: 26px; height: 26px;
+            background: #4F46E5;
+            color: white;
+            font-weight: 800;
+            font-size: 0.9rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .faq-q span { font-weight: 700; font-size: 0.97rem; color: #1E293B; line-height: 1.5; }
+        .faq-a {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding-left: 36px;
+        }
+        .faq-a-mark {
+            flex-shrink: 0;
+            width: 26px; height: 26px;
+            background: #10B981;
+            color: white;
+            font-weight: 800;
+            font-size: 0.9rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .faq-a span { color: #475569; font-size: 0.92rem; line-height: 1.6; }
+        .faq-divider { border: none; border-top: 1px solid #E2E8F0; margin-top: 16px; }
+
+        /* ===== 説明バッジ ===== */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            margin: 0 3px;
+        }
+        .badge-purple { background: #EDE9FE; color: #5B21B6; }
+        .badge-green  { background: #D1FAE5; color: #065F46; }
+        .badge-red    { background: #FFE4E6; color: #9F1239; }
+        .badge-gray   { background: #F1F5F9; color: #475569; }
+
+        /* ===== フッター ===== */
+        footer {
+            text-align: center;
+            padding: 40px 24px;
+            color: #94A3B8;
+            font-size: 0.85rem;
+        }
+        footer a { color: #6366F1; }
+
+        /* ===== レスポンシブ ===== */
+        @media (max-width: 600px) {
+            .section { padding: 24px 20px; }
+            .mock-charts { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 1.5rem; }
+        }
+
+        /* 矢印 */
+        .arrow-down {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: -16px 0;
+            color: #CBD5E1;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<div class="hero">
+    <span class="hero-icon">💆</span>
+    <h1>セラピスト別顧客分析ツール<br>取扱説明書</h1>
+    <p>はじめての方でも迷わず使えるよう、画面ごとに丁寧に解説しています</p>
+</div>
+
+<!-- 目次 -->
+<div class="toc">
+    <h2>📋 もくじ</h2>
+    <ol>
+        <li><a href="#s1">このツールで何ができるの？</a></li>
+        <li><a href="#s2">最初の準備：CSVファイルを用意する</a></li>
+        <li><a href="#s3">ファイルを読み込む（アップロード画面）</a></li>
+        <li><a href="#s4">月・セラピストを切り替える</a></li>
+        <li><a href="#s5">ダッシュボード画面の見方</a></li>
+        <li><a href="#s6">推移画面の見方（複数月のとき）</a></li>
+        <li><a href="#s7">全期間トータル画面の見方</a></li>
+        <li><a href="#s8">得意・苦手の閾値を調整する</a></li>
+        <li><a href="#s9">月を追加・削除する</a></li>
+        <li><a href="#s10">PDFに出力する</a></li>
+        <li><a href="#s11">用語の意味</a></li>
+        <li><a href="#s12">よくある質問</a></li>
+    </ol>
+</div>
+
+<!-- 1 -->
+<div class="section" id="s1">
+    <div class="section-title">
+        <span class="section-num">1</span>
+        <h2>このツールで何ができるの？</h2>
+    </div>
+
+    <p style="font-size:1rem;color:#475569;margin-bottom:20px;">
+        サロンの新規顧客データをグラフ化して、<strong>「どんな人が誰のところへ来て、どれだけ購入（リピート）したか」</strong>を一目で把握できます。
+    </p>
+
+    <div class="mock-screen" data-label="できること ① ダッシュボード">
+        <div class="mock-charts">
+            <div class="mock-chart">
+                <div class="mock-chart-title">📅 年代分布</div>
+                <div class="mock-bar-row"><span class="mock-bar-label">10代</span><div class="mock-bar" style="width:20px"></div></div>
+                <div class="mock-bar-row"><span class="mock-bar-label">20代</span><div class="mock-bar" style="width:55px"></div></div>
+                <div class="mock-bar-row"><span class="mock-bar-label">30代</span><div class="mock-bar" style="width:80px"></div></div>
+                <div class="mock-bar-row"><span class="mock-bar-label">40代</span><div class="mock-bar amber" style="width:40px"></div></div>
+                <div class="mock-bar-row"><span class="mock-bar-label">50代</span><div class="mock-bar green" style="width:30px"></div></div>
+            </div>
+            <div class="mock-chart">
+                <div class="mock-chart-title">👥 性別</div>
+                <div class="mock-donut"></div>
+                <p style="font-size:0.65rem;text-align:center;color:#64748B;margin-top:4px;">男性 55% ／ 女性 45%</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:16px;">
+        <div class="point" style="flex-direction:column;gap:4px;">
+            <span class="point-icon">📊</span>
+            <p><strong>グラフで一覧</strong><br>年代・性別・症状・媒体を棒グラフ/円グラフで表示</p>
+        </div>
+        <div class="point" style="flex-direction:column;gap:4px;">
+            <span class="point-icon">📈</span>
+            <p><strong>月ごとの推移</strong><br>複数月のデータを重ねて傾向を把握</p>
+        </div>
+        <div class="point" style="flex-direction:column;gap:4px;">
+            <span class="point-icon">⭐</span>
+            <p><strong>得意・苦手分析</strong><br>購入率をもとに得意層・苦手層を自動判定</p>
+        </div>
+    </div>
+</div>
+
+<!-- 2 -->
+<div class="section" id="s2">
+    <div class="section-title">
+        <span class="section-num">2</span>
+        <h2>最初の準備：CSVファイルを用意する</h2>
+    </div>
+
+    <div class="tip">
+        <span class="tip-icon">💡</span>
+        <p>このツールは <strong>Googleスプレッドシートで管理している顧客データ</strong> をCSVとして書き出して使います。<br>
+        2種類の形式に対応しています。どちらでも読み込めます。</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px;">
+        <div class="mock-screen" data-label="形式A｜集計済みシート（詳細分析）">
+            <p style="font-size:0.82rem;color:#475569;margin-bottom:8px;">「詳細分析」という名前のシートを使っている場合</p>
+            <div class="mock-table-wrapper" style="overflow:auto;">
+                <table class="mock-table">
+                    <tr><th>詳細分析</th><th>清家</th><th></th><th>院合計</th></tr>
+                    <tr><td></td><td>購入数</td><td>対応数</td><td>購入率</td></tr>
+                    <tr><td>性別 男性</td><td>2</td><td>5</td><td>40%</td></tr>
+                    <tr><td>年代 20代</td><td>1</td><td>3</td><td>33%</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="mock-screen" data-label="形式B｜生データシート（新規購入内訳）">
+            <p style="font-size:0.82rem;color:#475569;margin-bottom:8px;">1行1人ずつ記録している場合</p>
+            <div class="mock-table-wrapper" style="overflow:auto;">
+                <table class="mock-table">
+                    <tr><th>日付</th><th>名前</th><th>セラピスト</th><th>回数券</th></tr>
+                    <tr><td>4月1日</td><td>田中一郎</td><td>清家</td><td>8回券</td></tr>
+                    <tr><td>4月3日</td><td>鈴木花子</td><td>廣岡</td><td>初回のみ</td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:24px;margin-bottom:12px;font-size:1rem;font-weight:700;">Googleスプレッドシートからのエクスポート手順</h3>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <h3>スプレッドシートを開く</h3>
+                <p>Googleスプレッドシートで分析したい月のシートを開きます。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <h3>メニューから「ファイル」をクリック</h3>
+                <p>画面左上の「ファイル」メニューをクリックします。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <h3>「ダウンロード」→「カンマ区切り形式（.csv）」を選ぶ</h3>
+                <p>ダウンロードフォルダにCSVファイルが保存されます。</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="warn" style="margin-top:20px;">
+        <span class="warn-icon">⚠️</span>
+        <p>ダウンロードされるのは<strong>現在表示しているシートのみ</strong>です。複数のシートを読み込む場合は、1枚ずつ繰り返してください。</p>
+    </div>
+</div>
+
+<!-- 3 -->
+<div class="section" id="s3">
+    <div class="section-title">
+        <span class="section-num">3</span>
+        <h2>ファイルを読み込む（アップロード画面）</h2>
+    </div>
+
+    <div class="mock-screen" data-label="画面イメージ｜アップロード画面">
+        <div style="text-align:center;padding:16px;">
+            <div style="font-size:2.5rem;">💆</div>
+            <p style="font-weight:800;font-size:1.1rem;margin:8px 0;">セラピスト別顧客分析</p>
+            <p style="font-size:0.8rem;color:#64748B;margin-bottom:16px;">「詳細分析」シートをCSV形式でダウンロードしてアップロードしてください</p>
+            <div class="mock-upload">
+                <div style="font-size:2rem;">📂</div>
+                <p>CSVファイルをドラッグ＆ドロップ</p>
+                <p class="or">または</p>
+                <div style="display:inline-block;background:#4F46E5;color:white;padding:8px 20px;border-radius:8px;font-size:0.85rem;font-weight:700;margin-top:4px;">ファイルを選択</div>
+            </div>
+            <div style="margin-top:12px;background:#F1F5F9;color:#475569;padding:8px 14px;border-radius:8px;font-size:0.78rem;display:inline-block;">
+                📊 サンプルデータで試す（4月分）
+            </div>
+        </div>
+    </div>
+
+    <div class="steps" style="margin-top:20px;">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <h3>「ファイルを選択」ボタンを押す</h3>
+                <p>パソコンのファイル選択ダイアログが開きます。ダウンロードしたCSVファイルを選んでください。<strong>複数ファイルを一度に選択することもできます。</strong></p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <h3>または、ファイルをドラッグ＆ドロップ</h3>
+                <p>CSVファイルをファインダー（Mac）やエクスプローラー（Windows）から、点線の枠内に直接ドラッグして落とすこともできます。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <h3>読み込みが完了するとダッシュボードが開く</h3>
+                <p>自動でグラフ画面に切り替わります。</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="tip" style="margin-top:20px;">
+        <span class="tip-icon">💡</span>
+        <p><strong>はじめて使う場合は「サンプルデータで試す」ボタンがおすすめ。</strong><br>
+        実際のデータがなくても、どんな画面なのかすぐ確認できます。</p>
+    </div>
+</div>
+
+<!-- 4 -->
+<div class="section" id="s4">
+    <div class="section-title">
+        <span class="section-num">4</span>
+        <h2>月・セラピストを切り替える</h2>
+    </div>
+
+    <div class="mock-screen" data-label="画面イメージ｜ヘッダー＋月チップ＋タブ">
+        <div class="mock-header">
+            <span>💆 セラピスト別顧客分析</span>
+            <div style="margin-left:auto;display:flex;gap:6px;">
+                <span class="mock-btn">＋ 月を追加</span>
+                <span class="mock-btn">📄 PDF出力</span>
+                <span class="mock-btn">リセット</span>
+            </div>
+        </div>
+        <div class="mock-chips">
+            <div class="mock-chip active">2026年4月</div>
+            <div class="mock-chip">2026年5月 ×</div>
+            <div class="mock-chip">2026年6月 ×</div>
+        </div>
+        <div class="mock-tabs">
+            <div class="mock-tab active">院合計</div>
+            <div class="mock-tab">清家</div>
+            <div class="mock-tab">廣岡</div>
+            <div class="mock-tab">立花</div>
+            <div class="mock-tab">📊 全期間</div>
+            <div class="mock-tab">📈 推移</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:24px;font-size:1rem;font-weight:700;margin-bottom:12px;">① 月チップ（上の丸いボタン）</h3>
+    <p style="color:#475569;margin-bottom:8px;">読み込んだCSVの月が横に並びます。</p>
+    <ul style="color:#475569;padding-left:20px;font-size:0.93rem;line-height:2;">
+        <li><span class="badge badge-purple">クリック</span> → その月のデータに切り替え</li>
+        <li><span class="badge badge-red">× ボタン</span> → その月を削除（チップの右端に表示）</li>
+    </ul>
+
+    <h3 style="margin-top:20px;font-size:1rem;font-weight:700;margin-bottom:12px;">② タブ（月チップの下）</h3>
+    <p style="color:#475569;margin-bottom:8px;">セラピストごとのタブが自動で生成されます。</p>
+    <ul style="color:#475569;padding-left:20px;font-size:0.93rem;line-height:2;">
+        <li><span class="badge badge-purple">院合計</span> → 院全体の合算データを表示</li>
+        <li><span class="badge badge-purple">セラピスト名</span> → そのセラピスト個人のデータを表示</li>
+        <li><span class="badge badge-purple">📊 全期間</span> → 全月まとめたトータル分析（後述）</li>
+        <li><span class="badge badge-purple">📈 推移</span> → 月ごとの変化をグラフで確認（後述）</li>
+    </ul>
+
+    <div class="tip" style="margin-top:16px;">
+        <span class="tip-icon">💡</span>
+        <p><strong>タブは読み込んだCSVにいるセラピストが自動で増えます。</strong><br>
+        月によってセラピストが異なっても正しく表示されます。</p>
+    </div>
+</div>
+
+<!-- 5 -->
+<div class="section" id="s5">
+    <div class="section-title">
+        <span class="section-num">5</span>
+        <h2>ダッシュボード画面の見方</h2>
+    </div>
+
+    <p style="color:#475569;margin-bottom:20px;">「院合計」または各セラピストのタブを選ぶと表示されます。<strong>1ヶ月分のデータを5種類のグラフで見ることができます。</strong></p>
+
+    <div class="mock-screen" data-label="サマリーバー（上部の数字）">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div style="background:#EEF2FF;border-radius:10px;padding:10px 16px;text-align:center;min-width:100px;">
+                <div style="font-size:0.72rem;color:#64748B;">対応数</div>
+                <div style="font-size:1.3rem;font-weight:800;color:#4F46E5;">24人</div>
+            </div>
+            <div style="background:#EEF2FF;border-radius:10px;padding:10px 16px;text-align:center;min-width:100px;">
+                <div style="font-size:0.72rem;color:#64748B;">購入数</div>
+                <div style="font-size:1.3rem;font-weight:800;color:#4F46E5;">8人</div>
+            </div>
+            <div style="background:#D1FAE5;border-radius:10px;padding:10px 16px;text-align:center;min-width:100px;">
+                <div style="font-size:0.72rem;color:#064E3B;">購入率</div>
+                <div style="font-size:1.3rem;font-weight:800;color:#065F46;">33%</div>
+            </div>
+            <div style="background:#EEF2FF;border-radius:10px;padding:10px 16px;text-align:center;min-width:100px;">
+                <div style="font-size:0.72rem;color:#64748B;">男性</div>
+                <div style="font-size:1.3rem;font-weight:800;color:#4F46E5;">13人</div>
+                <div style="font-size:0.72rem;color:#64748B;">54%</div>
+            </div>
+            <div style="background:#EEF2FF;border-radius:10px;padding:10px 16px;text-align:center;min-width:100px;">
+                <div style="font-size:0.72rem;color:#64748B;">女性</div>
+                <div style="font-size:1.3rem;font-weight:800;color:#4F46E5;">11人</div>
+                <div style="font-size:0.72rem;color:#64748B;">46%</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top:24px;display:flex;flex-direction:column;gap:16px;">
+
+        <div class="mock-screen" data-label="グラフ① 年代分布（対応数 vs 購入数）">
+            <div class="mock-chart-title">📅 年代分布（対応数 vs 購入数）</div>
+            <p style="font-size:0.8rem;color:#475569;">年代ごとの「対応した人数（薄い色）」と「そのうち購入した人数（濃い色）」をまとめて棒グラフで表示します。<strong>どの年代がよく購入するかが一目でわかります。</strong></p>
+        </div>
+
+        <div class="mock-screen" data-label="グラフ② 性別">
+            <div class="mock-chart-title">👥 性別</div>
+            <p style="font-size:0.8rem;color:#475569;">対応した顧客の男女比をドーナツグラフで表示します。</p>
+        </div>
+
+        <div class="mock-screen" data-label="グラフ③ 症状別（対応数 vs 購入数）">
+            <div class="mock-chart-title">🩺 症状別（対応数 vs 購入数）</div>
+            <p style="font-size:0.8rem;color:#475569;">症状ごとの対応数と購入数を横棒グラフで表示します。<strong>「腰痛は来院数は多いが購入率が低い」</strong>といった分析ができます。</p>
+        </div>
+
+        <div class="mock-screen" data-label="グラフ④ 媒体別 購入率">
+            <div class="mock-chart-title">📣 媒体別 購入率</div>
+            <p style="font-size:0.8rem;color:#475569;">HPB経由・HP等・LINE・電話・メールなど、問い合わせ媒体ごとの購入率を棒グラフで比較します。<strong>どの媒体から来た人が購入しやすいか</strong>がわかります。</p>
+        </div>
+
+        <div class="mock-screen" data-label="グラフ⑤ 媒体別 対応数">
+            <div class="mock-chart-title">📊 媒体別 対応数</div>
+            <p style="font-size:0.8rem;color:#475569;">媒体ごとの来院人数をドーナツグラフで表示します。集客の主な経路を把握できます。</p>
+        </div>
+    </div>
+
+    <h3 style="margin-top:28px;font-size:1rem;font-weight:700;margin-bottom:12px;">⭐ 得意顧客層 / 苦手顧客層テーブル</h3>
+    <div class="mock-screen" data-label="得意・苦手テーブル">
+        <table class="mock-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th>カテゴリ</th>
+                    <th>対応数</th>
+                    <th>購入数</th>
+                    <th>購入率</th>
+                    <th>判定</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="row-good"><td>20代 女性</td><td>4</td><td>3</td><td>75%</td><td>⭐ 得意</td></tr>
+                <tr><td>40代 男性</td><td>5</td><td>2</td><td>40%</td><td>　中間</td></tr>
+                <tr class="row-bad"><td>50代 男性</td><td>3</td><td>0</td><td>0%</td><td>⚠ 苦手</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p style="color:#475569;font-size:0.92rem;margin-top:8px;">属性ごとの購入率を計算し、<span class="badge badge-green">緑：得意</span><span class="badge badge-red">赤：苦手</span>で色分けします。1回券購入者は対象外です。</p>
+</div>
+
+<!-- 6 -->
+<div class="section" id="s6">
+    <div class="section-title">
+        <span class="section-num">6</span>
+        <h2>推移画面の見方（複数月のとき）</h2>
+    </div>
+
+    <div class="tip">
+        <span class="tip-icon">💡</span>
+        <p><strong>2ヶ月以上のCSVを読み込んだときに活きる画面です。</strong><br>
+        タブの「📈 推移」をクリックすると表示されます。</p>
+    </div>
+
+    <div style="margin-top:20px;display:flex;flex-direction:column;gap:16px;">
+        <div class="mock-screen" data-label="グラフ｜購入率の推移">
+            <div class="mock-chart-title">📈 購入率の推移</div>
+            <div class="mock-line-chart">
+                <svg width="100%" height="100%" viewBox="0 0 300 50" preserveAspectRatio="none" style="position:absolute;inset:8px;width:calc(100% - 16px);height:calc(100% - 16px);">
+                    <polyline points="0,40 60,30 120,20 180,25 240,10" fill="none" stroke="#818CF8" stroke-width="2.5" stroke-linejoin="round"/>
+                    <polyline points="0,35 60,38 120,32 180,30 240,20" fill="none" stroke="#34D399" stroke-width="2.5" stroke-linejoin="round" stroke-dasharray="4,3"/>
+                </svg>
+            </div>
+            <p style="font-size:0.78rem;color:#64748B;margin-top:4px;">セラピストごとの購入率を折れ線で比較。上昇傾向か下降傾向かが一目でわかります。</p>
+        </div>
+
+        <div class="mock-screen" data-label="グラフ｜対応数の推移 / 症状別 対応数">
+            <p style="font-size:0.8rem;color:#475569;">月ごとの来院人数の変化と、上位5症状の推移を棒グラフで確認できます。</p>
+        </div>
+
+        <div class="mock-screen" data-label="折れ線グラフ群（カテゴリ別 購入率推移）">
+            <p style="font-size:0.8rem;color:#475569;margin-bottom:8px;">以下のカテゴリ別購入率を折れ線グラフで確認できます：</p>
+            <ul style="font-size:0.82rem;color:#475569;padding-left:20px;line-height:2;">
+                <li>👥 性別（男性 / 女性）</li>
+                <li>📣 媒体別（HPB / HP等 / LINE など）</li>
+                <li>📅 年代別（全体）</li>
+                <li>📅 年代別（男性のみ）</li>
+                <li>📅 年代別（女性のみ）</li>
+                <li>🩺 症状別（上位5症状）</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="mock-screen" style="margin-top:12px;" data-label="月別サマリーテーブル">
+        <table class="mock-table" style="width:100%">
+            <thead>
+                <tr>
+                    <th>期間</th><th>対応数</th><th>購入数</th><th>購入率</th><th>セラピスト別</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>4月</td><td>24人</td><td>8人</td><td>33%</td><td style="font-size:0.7rem;">清家:5人/40%<br>廣岡:3人/25%</td></tr>
+                <tr><td>5月</td><td>28人</td><td>11人</td><td>39%</td><td style="font-size:0.7rem;">清家:7人/45%<br>廣岡:4人/33%</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 7 -->
+<div class="section" id="s7">
+    <div class="section-title">
+        <span class="section-num">7</span>
+        <h2>全期間トータル画面の見方</h2>
+    </div>
+
+    <div class="tip">
+        <span class="tip-icon">💡</span>
+        <p>タブの「📊 全期間」をクリックすると表示されます。<strong>読み込んだ全月のデータをまとめて集計します。</strong></p>
+    </div>
+
+    <div class="mock-screen" style="margin-top:20px;" data-label="セラピスト選択ボタン">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <span style="font-size:0.82rem;color:#64748B;font-weight:600;">表示対象：</span>
+            <span style="background:#4F46E5;color:white;padding:5px 14px;border-radius:20px;font-size:0.82rem;font-weight:700;">院合計</span>
+            <span style="background:#F1F5F9;color:#475569;padding:5px 14px;border-radius:20px;font-size:0.82rem;font-weight:600;">清家</span>
+            <span style="background:#F1F5F9;color:#475569;padding:5px 14px;border-radius:20px;font-size:0.82rem;font-weight:600;">廣岡</span>
+        </div>
+    </div>
+
+    <p style="color:#475569;font-size:0.93rem;margin-top:16px;margin-bottom:8px;">上のボタンで「院合計」または個別セラピストに切り替えることができます。</p>
+
+    <div class="mock-screen" style="margin-top:12px;" data-label="全期間トレンドテーブル">
+        <p style="font-size:0.8rem;color:#64748B;font-weight:700;margin-bottom:6px;">性別 購入率推移</p>
+        <table class="mock-table" style="width:100%">
+            <thead>
+                <tr><th>カテゴリ</th><th>4月</th><th>5月</th><th>6月</th><th>全期間</th><th>判定</th></tr>
+            </thead>
+            <tbody>
+                <tr class="row-good"><td>女性</td><td>38%</td><td>42%</td><td>50%</td><td>43%</td><td>⭐ 得意</td></tr>
+                <tr class="row-bad"><td>男性</td><td>25%</td><td>20%</td><td>22%</td><td>22%</td><td>⚠ 苦手</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p style="color:#475569;font-size:0.92rem;margin-top:12px;">
+        以下6種類のトレンドテーブルが表示されます：
+    </p>
+    <ul style="color:#475569;padding-left:20px;font-size:0.92rem;line-height:2.2;margin-top:6px;">
+        <li>👥 性別 購入率推移</li>
+        <li>📅 年代別 購入率推移（全体）</li>
+        <li>📅 年代別 購入率推移（男性）</li>
+        <li>📅 年代別 購入率推移（女性）</li>
+        <li>🩺 症状別 購入率推移</li>
+        <li>📣 媒体別 購入率推移</li>
+    </ul>
+</div>
+
+<!-- 8 -->
+<div class="section" id="s8">
+    <div class="section-title">
+        <span class="section-num">8</span>
+        <h2>得意・苦手の閾値を調整する</h2>
+    </div>
+
+    <p style="color:#475569;margin-bottom:20px;">「得意」「苦手」と判定する購入率の基準は、スライダーで自由に変えられます。</p>
+
+    <div class="mock-screen" data-label="閾値スライダー">
+        <div style="display:flex;flex-direction:column;gap:14px;padding:4px 0;">
+            <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:0.85rem;font-weight:600;"><span class="badge badge-green">得意</span> 購入率 <strong>50</strong>% 以上</span>
+                </div>
+                <div style="position:relative;height:6px;background:#E2E8F0;border-radius:3px;">
+                    <div style="position:absolute;left:0;width:50%;height:100%;background:#10B981;border-radius:3px;"></div>
+                    <div style="position:absolute;left:50%;top:-5px;transform:translateX(-50%);width:16px;height:16px;background:#10B981;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+                </div>
+            </div>
+            <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="font-size:0.85rem;font-weight:600;"><span class="badge badge-red">苦手</span> 購入率 <strong>30</strong>% 以下</span>
+                </div>
+                <div style="position:relative;height:6px;background:#E2E8F0;border-radius:3px;">
+                    <div style="position:absolute;left:0;width:30%;height:100%;background:#EF4444;border-radius:3px;"></div>
+                    <div style="position:absolute;left:30%;top:-5px;transform:translateX(-50%);width:16px;height:16px;background:#EF4444;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tip" style="margin-top:16px;">
+        <span class="tip-icon">💡</span>
+        <p>ダッシュボード画面のスライダーと全期間画面のスライダーは<strong>連動しています。</strong>どちらを動かしても両方に反映されます。</p>
+    </div>
+
+    <div class="point" style="margin-top:10px;">
+        <span class="point-icon">📌</span>
+        <p>デフォルトは「得意：50%以上」「苦手：30%以下」です。院の平均的な購入率に合わせて調整すると使いやすくなります。</p>
+    </div>
+</div>
+
+<!-- 9 -->
+<div class="section" id="s9">
+    <div class="section-title">
+        <span class="section-num">9</span>
+        <h2>月を追加・削除する</h2>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:700;margin-bottom:12px;">月を追加する</h3>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <h3>ヘッダーの「＋ 月を追加」ボタンを押す</h3>
+                <p>ファイル選択ダイアログが開きます。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <h3>追加したい月のCSVを選ぶ</h3>
+                <p>複数のCSVをまとめて選択することもできます。自動で月順に並び替えられます。</p>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:700;margin-top:24px;margin-bottom:12px;">月を削除する</h3>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <h3>月チップの右端にある「×」を押す</h3>
+                <p>その月のデータが削除されます。他の月のデータはそのまま残ります。</p>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="font-size:1rem;font-weight:700;margin-top:24px;margin-bottom:12px;">全部やり直したいとき</h3>
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <h3>ヘッダーの「リセット」ボタンを押す</h3>
+                <p>全データが消えてアップロード画面に戻ります。</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="warn" style="margin-top:16px;">
+        <span class="warn-icon">⚠️</span>
+        <p>「リセット」を押すと<strong>読み込んだ全月のデータが消えます。</strong>元に戻す機能はありませんので注意してください。</p>
+    </div>
+</div>
+
+<!-- 10 -->
+<div class="section" id="s10">
+    <div class="section-title">
+        <span class="section-num">10</span>
+        <h2>PDFに出力する</h2>
+    </div>
+
+    <p style="color:#475569;margin-bottom:20px;">現在表示している画面をそのままPDFファイルとして保存できます。会議資料や報告書に使えます。</p>
+
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <h3>PDFにしたい画面を開く</h3>
+                <p>ダッシュボード・推移・全期間、どの画面でもOKです。セラピストのタブも切り替えた状態で出力されます。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <h3>ヘッダーの「📄 PDF出力」ボタンを押す</h3>
+                <p>「⏳ 生成中...」と表示され、しばらく待つと自動でダウンロードされます。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <h3>ダウンロードフォルダにPDFが保存される</h3>
+                <p>ファイル名は自動生成されます（例：<code style="background:#F1F5F9;padding:2px 6px;border-radius:4px;font-size:0.85rem;">院合計_ダッシュボード_2026年4月.pdf</code>）</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="tip" style="margin-top:16px;">
+        <span class="tip-icon">💡</span>
+        <p>PDFはA4縦サイズで出力されます。内容が長い場合は自動で複数ページに分かれます。各ページ上部に<strong>セラピスト名・ビュー名・期間・ページ番号</strong>が入ります。</p>
+    </div>
+
+    <div class="warn">
+        <span class="warn-icon">⚠️</span>
+        <p>グラフが多いページは生成に<strong>数秒〜10秒程度</strong>かかることがあります。ボタンが「⏳ 生成中...」の間はそのままお待ちください。</p>
+    </div>
+</div>
+
+<!-- 11 -->
+<div class="section" id="s11">
+    <div class="section-title">
+        <span class="section-num">11</span>
+        <h2>用語の意味</h2>
+    </div>
+
+    <div class="glossary">
+        <div class="glossary-item">
+            <span class="glossary-term">対応数</span>
+            <p class="glossary-desc">その月に初回来院した新規顧客の人数。</p>
+        </div>
+        <div class="glossary-item">
+            <span class="glossary-term">購入数</span>
+            <p class="glossary-desc">初回来院後に回数券などを購入した人数。<strong>1回券（初回のみ）は含みません。</strong></p>
+        </div>
+        <div class="glossary-item">
+            <span class="glossary-term">購入率</span>
+            <p class="glossary-desc">購入数 ÷ 対応数 × 100 で計算。「新規のうち何%が継続購入したか」を表す数字。</p>
+        </div>
+        <div class="glossary-item">
+            <span class="glossary-term">院合計</span>
+            <p class="glossary-desc">全セラピストのデータを合算した院全体の数字。</p>
+        </div>
+        <div class="glossary-item">
+            <span class="glossary-term">1回券</span>
+            <p class="glossary-desc">「初回のみ」「体験のみ」など、継続しなかった顧客。得意・苦手分析では対象外。</p>
+        </div>
+        <div class="glossary-item">
+            <span class="glossary-term">閾値（いきち）</span>
+            <p class="glossary-desc">「得意」「苦手」と判定する境目となる購入率の数値。スライダーで変更できます。</p>
+        </div>
+        <div class="glossary-item">
+            <span class="glossary-term">HPB</span>
+            <p class="glossary-desc">ホットペッパービューティー経由の顧客。</p>
+        </div>
+        <div class="glossary-item">
+            <span class="glossary-term">HP等</span>
+            <p class="glossary-desc">自院のホームページ・Googleマップ・その他経由の顧客。</p>
+        </div>
+        <div class="glossary-item">
+            <span class="glossary-term">CSV</span>
+            <p class="glossary-desc">Excelやスプレッドシートのデータをテキスト形式で保存したファイル。「.csv」という拡張子がつく。</p>
+        </div>
+    </div>
+</div>
+
+<!-- 12 -->
+<div class="section" id="s12">
+    <div class="section-title">
+        <span class="section-num">12</span>
+        <h2>よくある質問</h2>
+    </div>
+
+    <div class="faq">
+
+        <div class="faq-item">
+            <div class="faq-q">
+                <div class="faq-q-mark">Q</div>
+                <span>CSVを読み込んだらグラフが空のまま（0件）になる</span>
+            </div>
+            <div class="faq-a">
+                <div class="faq-a-mark">A</div>
+                <span>CSVの列名が想定と違う可能性があります。「セラピスト」「年代」「性別」「回数券」の列が含まれているか確認してください。スプレッドシートの<strong>シートを間違えていないか</strong>も確認してみてください。</span>
+            </div>
+            <hr class="faq-divider">
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">
+                <div class="faq-q-mark">Q</div>
+                <span>「推移」タブや「全期間」タブが見当たらない</span>
+            </div>
+            <div class="faq-a">
+                <div class="faq-a-mark">A</div>
+                <span>これらのタブは<strong>2ヶ月以上のデータを読み込んだとき</strong>に表示されます。まず「＋ 月を追加」から2ヶ月目のCSVを追加してください。</span>
+            </div>
+            <hr class="faq-divider">
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">
+                <div class="faq-q-mark">Q</div>
+                <span>セラピスト名のタブが出てこない</span>
+            </div>
+            <div class="faq-a">
+                <div class="faq-a-mark">A</div>
+                <span>CSVの「セラピスト」列（または「担当者」列）の値から自動生成されます。列名・データがあるか確認してください。生データ形式のCSVを使っている場合は「セラピスト」の列が必要です。</span>
+            </div>
+            <hr class="faq-divider">
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">
+                <div class="faq-q-mark">Q</div>
+                <span>PDFが生成されない、またはエラーが出る</span>
+            </div>
+            <div class="faq-a">
+                <div class="faq-a-mark">A</div>
+                <span>インターネット接続が必要なライブラリを使っています。<strong>オフライン環境では動作しません。</strong>Wi-Fiまたはモバイルデータ接続を確認してから再度試してください。</span>
+            </div>
+            <hr class="faq-divider">
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">
+                <div class="faq-q-mark">Q</div>
+                <span>データは外部に送信されますか？</span>
+            </div>
+            <div class="faq-a">
+                <div class="faq-a-mark">A</div>
+                <span><strong>一切送信されません。</strong>すべての処理はあなたのブラウザ内だけで完結します。データはブラウザを閉じると消えます。</span>
+            </div>
+            <hr class="faq-divider">
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">
+                <div class="faq-q-mark">Q</div>
+                <span>スマートフォンでも使えますか？</span>
+            </div>
+            <div class="faq-a">
+                <div class="faq-a-mark">A</div>
+                <span>スマートフォンのブラウザでも動作しますが、グラフが多いため<strong>パソコンでの利用を推奨</strong>します。</span>
+            </div>
+            <hr class="faq-divider">
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-q">
+                <div class="faq-q-mark">Q</div>
+                <span>月を増やしたら前のグラフがおかしくなった</span>
+            </div>
+            <div class="faq-a">
+                <div class="faq-a-mark">A</div>
+                <span>月チップをクリックして表示したい月を選び直してください。ページをリロード（再読み込み）すると最初の状態に戻りますが、<strong>データも消えます</strong>。リロード後はCSVを読み込み直してください。</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- フッター -->
+<footer>
+    <p>セラピスト別顧客分析ツール 取扱説明書</p>
+    <p style="margin-top:6px;font-size:0.8rem;">
+        ツールを開く → <a href="index.html">index.html</a>
+    </p>
+</footer>
+
+</body>
+</html>
