@@ -796,6 +796,35 @@ function tableBlock(title, rows, good, bad) {
 }
 
 // ==================== トレンドビュー ====================
+
+// カテゴリ別購入率の折れ線グラフ共通ヘルパー
+function makeCategoryLineChart(id, rows, monthLabels, maxLines) {
+    const data = maxLines ? rows.slice(0, maxLines) : rows;
+    if (!data.length) { noData(id); return; }
+
+    const datasets = data.map((row, i) => ({
+        label: row.cat,
+        data: row.monthRates,
+        borderColor: TREND_COLORS[i % TREND_COLORS.length],
+        backgroundColor: TREND_COLORS[i % TREND_COLORS.length],
+        spanGaps: true,
+        pointRadius: 5,
+        tension: 0.3,
+        fill: false,
+        borderWidth: 2,
+    }));
+
+    makeChart(id, {
+        type: 'line',
+        data: { labels: monthLabels, datasets },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } },
+        },
+    });
+}
+
 function renderTrendView() {
     destroyCharts();
 
@@ -918,6 +947,15 @@ function renderTrendView() {
             </table>
             </div>
         </div>`;
+
+    // ---- カテゴリ別 購入率推移（折れ線グラフ）----
+    const td = buildTrendData('院合計');
+    makeCategoryLineChart('chart-trend-gender-rate',    td.gender,              labels);
+    makeCategoryLineChart('chart-trend-media-rate',     td.media,               labels);
+    makeCategoryLineChart('chart-trend-age-rate',       td.ages,                labels);
+    makeCategoryLineChart('chart-trend-age-male-rate',  td.agesMale,            labels);
+    makeCategoryLineChart('chart-trend-age-female-rate',td.agesFemale,          labels);
+    makeCategoryLineChart('chart-trend-symptom-rate',   td.symptoms.slice(0,5), labels);
 }
 
 // 閾値スライダー（月次ダッシュボード用）

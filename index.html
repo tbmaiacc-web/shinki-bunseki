@@ -129,6 +129,34 @@
         </div>
       </div>
       <div id="trend-summary"></div>
+
+      <!-- カテゴリ別 購入率推移（折れ線） -->
+      <div class="trend-grid" style="margin-top:16px">
+        <div class="chart-card">
+          <h3 class="chart-title">👥 性別 購入率推移</h3>
+          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-gender-rate"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">📣 媒体別 購入率推移</h3>
+          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-media-rate"></canvas></div>
+        </div>
+        <div class="chart-card" style="grid-column:1/-1">
+          <h3 class="chart-title">📅 年代別 購入率推移（全体）</h3>
+          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-age-rate"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">📅 年代別 購入率推移（男性）</h3>
+          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-age-male-rate"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <h3 class="chart-title">📅 年代別 購入率推移（女性）</h3>
+          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-age-female-rate"></canvas></div>
+        </div>
+        <div class="chart-card" style="grid-column:1/-1">
+          <h3 class="chart-title">🩺 症状別 購入率推移（上位5）</h3>
+          <div class="chart-wrap chart-wrap-tall"><canvas id="chart-trend-symptom-rate"></canvas></div>
+        </div>
+      </div>
     </main>
 
     <!-- ===== 全期間トータル ===== -->
