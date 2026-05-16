@@ -52,6 +52,19 @@ body {
 }
 .btn-sample:hover { border-color: #4F46E5; color: #4F46E5; }
 
+.clinic-code-input {
+    border: 2px solid #C7D2FE;
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.88rem;
+    color: #1E293B;
+    width: 148px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+.clinic-code-input:focus { border-color: #4F46E5; }
+.clinic-code-input::placeholder { color: #94A3B8; }
+
 /* ===== アップロード画面 ===== */
 #upload-section {
     min-height: 100vh;

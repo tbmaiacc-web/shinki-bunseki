@@ -1558,14 +1558,24 @@ function exportCSV() {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
 
-    const viewLabel = state.currentView === 'trend' ? '推移'
-                    : state.currentView === 'total' ? '全期間'
-                    : 'ダッシュボード';
-    const periodStr = state.months.map(m => abbreviatePeriod(m.period)).join('_');
+    // ファイル名: [院コード_]セラピスト_YYYY-MM（複数月はYYYY-MM_YYYY-MM）
+    const clinicCode = document.getElementById('clinic-code').value.trim();
+    const periodISO  = state.months.map(m => periodToISO(m.period)).join('_');
+    const parts      = [clinicCode, therapistLabel, periodISO].filter(Boolean);
     a.href     = url;
-    a.download = `${therapistLabel}_${viewLabel}_${periodStr}.csv`;
+    a.download = `${parts.join('_')}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+// 期間文字列から YYYY-MM を抽出（例: "草加院帳簿2026年5月..." → "2026-05"）
+function periodToISO(period) {
+    const m = period.match(/(\d{4})年\s*(\d{1,2})月/);
+    if (m) return `${m[1]}-${m[2].padStart(2, '0')}`;
+    // 年なし（「5月」など）→ 当年を補完
+    const m2 = period.match(/(\d{1,2})月/);
+    if (m2) return `${new Date().getFullYear()}-${m2[1].padStart(2, '0')}`;
+    return period.replace(/[^\w-]/g, '').slice(0, 10);
 }
 
 document.getElementById('csv-btn').addEventListener('click', exportCSV);
