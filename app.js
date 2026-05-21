@@ -12,7 +12,7 @@ const state = {
     currentView: 'dashboard', // 'dashboard' | 'trend' | 'total'
     charts: {},
     goodThreshold: 50,
-    badThreshold: 30,
+    badThreshold: 39,
 };
 
 const TREND_COLORS = [
