@@ -414,6 +414,7 @@
         <li><a href="#s8">得意・苦手の閾値を調整する</a></li>
         <li><a href="#s9">月を追加・削除する</a></li>
         <li><a href="#s10">PDFに出力する</a></li>
+        <li><a href="#s10b">CSVに出力する</a></li>
         <li><a href="#s11">用語の意味</a></li>
         <li><a href="#s12">よくある質問</a></li>
     </ol>
@@ -599,6 +600,7 @@
             <span>💆 セラピスト別顧客分析</span>
             <div style="margin-left:auto;display:flex;gap:6px;">
                 <span class="mock-btn">＋ 月を追加</span>
+                <span class="mock-btn">📥 CSV出力</span>
                 <span class="mock-btn">📄 PDF出力</span>
                 <span class="mock-btn">リセット</span>
             </div>
@@ -855,11 +857,11 @@
             </div>
             <div>
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                    <span style="font-size:0.85rem;font-weight:600;"><span class="badge badge-red">苦手</span> 購入率 <strong>30</strong>% 以下</span>
+                    <span style="font-size:0.85rem;font-weight:600;"><span class="badge badge-red">苦手</span> 購入率 <strong>39</strong>% 以下</span>
                 </div>
                 <div style="position:relative;height:6px;background:#E2E8F0;border-radius:3px;">
-                    <div style="position:absolute;left:0;width:30%;height:100%;background:#EF4444;border-radius:3px;"></div>
-                    <div style="position:absolute;left:30%;top:-5px;transform:translateX(-50%);width:16px;height:16px;background:#EF4444;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+                    <div style="position:absolute;left:0;width:39%;height:100%;background:#EF4444;border-radius:3px;"></div>
+                    <div style="position:absolute;left:39%;top:-5px;transform:translateX(-50%);width:16px;height:16px;background:#EF4444;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
                 </div>
             </div>
         </div>
@@ -872,7 +874,7 @@
 
     <div class="point" style="margin-top:10px;">
         <span class="point-icon">📌</span>
-        <p>デフォルトは「得意：50%以上」「苦手：30%以下」です。院の平均的な購入率に合わせて調整すると使いやすくなります。</p>
+        <p>デフォルトは「得意：50%以上」「苦手：39%以下」「中間：40〜49%」です。スライダーは1%刻みで動かせるので、院の平均的な購入率に合わせて細かく調整できます。</p>
     </div>
 </div>
 
@@ -970,6 +972,68 @@
     <div class="warn">
         <span class="warn-icon">⚠️</span>
         <p>グラフが多いページは生成に<strong>数秒〜10秒程度</strong>かかることがあります。ボタンが「⏳ 生成中...」の間はそのままお待ちください。</p>
+    </div>
+</div>
+
+<!-- 10b -->
+<div class="section" id="s10b">
+    <div class="section-title">
+        <span class="section-num">10<small style="font-size:0.6em">b</small></span>
+        <h2>CSVに出力する</h2>
+    </div>
+
+    <p style="color:#475569;margin-bottom:20px;">表示中のデータをCSVファイルとして保存できます。Excelやスプレッドシートで開いて自由に集計・加工できます。</p>
+
+    <div class="steps">
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+                <h3>CSVにしたい画面を開く</h3>
+                <p>ダッシュボード・推移・全期間、どの画面でも対応しています。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+                <h3>ヘッダーの「📥 CSV出力」ボタンを押す</h3>
+                <p>すぐにCSVファイルがダウンロードされます。</p>
+            </div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+                <h3>Excelやスプレッドシートで開く</h3>
+                <p>BOM付きUTF-8で出力されるので、Excelで開いても文字化けしません。</p>
+            </div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:24px;margin-bottom:12px;font-size:1rem;font-weight:700;">CSVに含まれるデータ</h3>
+    <div class="mock-screen" data-label="CSV出力サンプル">
+        <table class="mock-table" style="width:100%">
+            <thead>
+                <tr><th>項目</th><th>4月</th><th>5月</th><th>6月</th><th>全期間合計</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>20代 対応数</td><td>3</td><td>4</td><td>2</td><td>9</td></tr>
+                <tr><td>20代 購入率</td><td>67%</td><td>50%</td><td>50%</td><td>56%</td></tr>
+                <tr><td>男性 対応数</td><td>13</td><td>12</td><td>14</td><td>39</td></tr>
+                <tr><td>女性 対応数</td><td>11</td><td>14</td><td>9</td><td>34</td></tr>
+                <tr><td>腰痛 対応数</td><td>10</td><td>8</td><td>9</td><td>27</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p style="color:#475569;font-size:0.92rem;margin-top:12px;">画面ごとに以下の情報が含まれます：</p>
+    <ul style="color:#475569;padding-left:20px;font-size:0.92rem;line-height:2;margin-top:6px;">
+        <li><span class="badge badge-purple">ダッシュボード</span>選択中セラピストの単月データ</li>
+        <li><span class="badge badge-purple">全期間トータル</span>全月×全カテゴリの集計</li>
+        <li><span class="badge badge-purple">推移</span>月別サマリーとセラピスト別推移</li>
+    </ul>
+
+    <div class="tip" style="margin-top:16px;">
+        <span class="tip-icon">💡</span>
+        <p>ファイル名は <code style="background:#F1F5F9;padding:2px 6px;border-radius:4px;font-size:0.85rem;">院合計_ダッシュボード_2026年4月.csv</code> のように自動生成されます。</p>
     </div>
 </div>
 
