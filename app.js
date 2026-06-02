@@ -252,13 +252,16 @@ function parseCSV(text) {
     const fmt = detectFormat(rows);
     if (fmt === 'raw')        return parseRawCSV(rows);
     if (fmt === 'aggregated') return parseAggregatedCSV(rows);
-    throw new Error('CSVフォーマットが認識できません。「詳細分析」シートまたは「新規購入内訳」シートのCSVをアップロードしてください。');
+    if (fmt === 'inquiry')    return parseInquiryCSV(rows);
+    throw new Error('CSVフォーマットが認識できません。「詳細分析」「新規購入内訳」「問い合わせ」シートのCSVをアップロードしてください。');
 }
 
 function detectFormat(rows) {
     const first = String(rows[0]?.[0] ?? '').trim();
     if (first === '詳細分析') return 'aggregated';
     if (first === '日付')    return 'raw';
+    // 「問い合わせ」シート（伊勢崎宮子院帳簿）形式の検出
+    if (first === '問い合わせ') return 'inquiry';
     // 先頭数行に日付パターンがあれば raw とみなす（4/1 または 4月1日 または ４月１日）
     for (let i = 0; i < Math.min(5, rows.length); i++) {
         if (isDateCell(String(rows[i]?.[0] ?? '').trim())) return 'raw';
@@ -394,6 +397,170 @@ function parseRawCSV(rows) {
         });
     }
 
+    Object.values(data).forEach(d => {
+        if (d.total.treated > 0) d.total.rate = Math.round(d.total.purchase / d.total.treated * 100);
+        ['male', 'female'].forEach(g => {
+            if (d.gender[g].treated > 0) d.gender[g].rate = Math.round(d.gender[g].purchase / d.gender[g].treated * 100);
+        });
+        calcRates(d.ageTotal);
+        calcRates(d.ageByGender.male);
+        calcRates(d.ageByGender.female);
+        calcRates(d.media.total);
+        calcRates(d.media.male);
+        calcRates(d.media.female);
+        calcRates(d.symptoms);
+    });
+
+    return { therapists: therapistList, data };
+}
+
+// ==================== 問い合わせシート CSV パース ====================
+// 列構成（0始まり）:
+// 0:受付日時確認 / 1:受付日時 / 2:顧客名 / 3:問い合わせ種別 / 4:流入媒体
+// 5:予約確定確認 / 6:予約確定日 / 7:予約後キャンセル / 8:他院案内
+// 9:新規損失理由 / 10:他院既存紹介 / 11:来院確認 / 12:来院日
+// 13:担当者 / 14:年代区分 / 15:主訴 / 16:重症度区分 / 17:2回目以降
+// 18:回数券種別 / 19:男女
+function parseInquiryCSV(rows) {
+    // 列名行は row[1] (改行入りセルを含む)。データは row[2] 以降。
+    // ただしPapaParse挙動で row[0] が「問い合わせ」の場合、row[1] が列ヘッダー、row[2]以降が実データ。
+    const rawNames = new Set();
+    const dataRows = [];
+
+    for (let i = 2; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length < 14) continue;
+        const visited = String(row[11] ?? '').trim().toUpperCase() === 'TRUE';
+        const therapist = String(row[13] ?? '').trim();
+        if (!visited || !therapist) continue;
+        rawNames.add(therapist);
+        dataRows.push(row);
+    }
+
+    if (!dataRows.length) {
+        throw new Error('来院済みの患者データが見つかりませんでした（来院確認=TRUE かつ 担当者あり の行がありません）');
+    }
+
+    // セラピスト名統合：短い名前(姓)を基準に、長い名前(姓+名)は姓に寄せる
+    // 例: ['清家', '清家雅斗', '富澤'] → '清家雅斗' → '清家', '富澤'はそのまま
+    const sortedNames = [...rawNames].sort((a, b) => a.length - b.length);
+    const nameMap = {};
+    sortedNames.forEach(name => {
+        // すでに登録済みの短い名前で始まる場合はそちらに統合
+        const shorter = sortedNames.find(s => s.length < name.length && name.startsWith(s));
+        nameMap[name] = shorter || name;
+    });
+    const therapistList = [...new Set(Object.values(nameMap))];
+    const data = {};
+    therapistList.forEach(t => { data[t] = emptyData(); });
+    data['院合計'] = emptyData();
+
+    // 年代の正規化
+    function normalizeAge(raw) {
+        const s = String(raw || '').trim();
+        if (!s) return null;
+        if (s === '学生') return '学生';
+        // 「20代前半」「20代後半」「60代以上」「30代」 → 「20代」「60代」
+        const m = s.match(/^(\d+)代/);
+        if (m) return m[1] + '代';
+        // 数字のみ→「50代」
+        const n = parseInt(toHalfWidth(s), 10);
+        if (!isNaN(n) && n > 0) return (n <= 9 ? n * 10 : n) + '代';
+        return null;
+    }
+
+    // 媒体の正規化
+    function normalizeMedia(inquiryType, source) {
+        const t = String(inquiryType || '').trim();
+        const src = String(source || '').trim();
+        if (t === 'ホットペッパー' || src === 'HPB') return 'HPB';
+        if (t === 'TEL')   return '電話';
+        if (t === 'LINE')  return 'LINE';
+        if (t === 'メール') return 'メール';
+        if (t === '直接')   return '直接来店';
+        if (t === '紹介')   return '紹介';
+        if (t && t !== 'その他') return t;
+        if (src && src !== 'その他') return src;
+        return 'その他';
+    }
+
+    // 購入判定：回数券種別が「N回券」(N>=2)
+    function isPurchaseKaiken(raw) {
+        const s = toHalfWidth(String(raw || '').trim());
+        const m = s.match(/^(\d+)回券/);
+        if (!m) return false;
+        return parseInt(m[1], 10) > 1;
+    }
+
+    for (const row of dataRows) {
+        const rawTherapist = String(row[13] ?? '').trim();
+        const therapist = nameMap[rawTherapist] || rawTherapist;
+        const ageRaw    = String(row[14] ?? '').trim();
+        const symptom   = String(row[15] ?? '').trim();
+        const kaikenRaw = String(row[18] ?? '').trim();
+        const genderRaw = String(row[19] ?? '').trim();
+        const inqType   = String(row[3]  ?? '').trim();
+        const inqSrc    = String(row[4]  ?? '').trim();
+
+        const age    = normalizeAge(ageRaw);
+        const gender = genderRaw === '男' || genderRaw === '男性' ? 'male'
+                     : genderRaw === '女' || genderRaw === '女性' ? 'female'
+                     : null;
+        const media  = normalizeMedia(inqType, inqSrc);
+        const isPurchase = isPurchaseKaiken(kaikenRaw);
+
+        for (const key of [therapist, '院合計']) {
+            const d = data[key];
+
+            // 合計
+            d.total.treated++;
+            if (isPurchase) d.total.purchase++;
+
+            // 性別
+            if (gender) {
+                d.gender[gender].treated++;
+                if (isPurchase) d.gender[gender].purchase++;
+            }
+
+            // 年代（全体）
+            if (age) {
+                if (!d.ageTotal[age]) d.ageTotal[age] = { purchase: 0, treated: 0, rate: null };
+                d.ageTotal[age].treated++;
+                if (isPurchase) d.ageTotal[age].purchase++;
+            }
+
+            // 年代（性別別）
+            if (age && gender) {
+                if (!d.ageByGender[gender][age]) d.ageByGender[gender][age] = { purchase: 0, treated: 0, rate: null };
+                d.ageByGender[gender][age].treated++;
+                if (isPurchase) d.ageByGender[gender][age].purchase++;
+            }
+
+            // 媒体
+            if (media) {
+                const segs = ['total', ...(gender ? [gender] : [])];
+                for (const seg of segs) {
+                    if (!d.media[seg][media]) d.media[seg][media] = { purchase: 0, treated: 0, rate: null };
+                    d.media[seg][media].treated++;
+                    if (isPurchase) d.media[seg][media].purchase++;
+                }
+            }
+
+            // 症状
+            if (symptom) {
+                if (!d.symptoms[symptom]) d.symptoms[symptom] = { purchase: 0, treated: 0, rate: null };
+                d.symptoms[symptom].treated++;
+                if (isPurchase) d.symptoms[symptom].purchase++;
+            }
+        }
+    }
+
+    // 購入率計算
+    function calcRates(obj) {
+        Object.values(obj).forEach(c => {
+            if (c.treated > 0) c.rate = Math.round(c.purchase / c.treated * 100);
+        });
+    }
     Object.values(data).forEach(d => {
         if (d.total.treated > 0) d.total.rate = Math.round(d.total.purchase / d.total.treated * 100);
         ['male', 'female'].forEach(g => {
