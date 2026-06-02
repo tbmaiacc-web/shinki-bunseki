@@ -144,15 +144,31 @@ function abbreviatePeriod(period) {
 function loadCSVText(text, title) {
     const isFirst = state.months.length === 0;
     const result = parseCSV(text);
-    const period = title || '';
 
-    // 同じ period 名なら上書き、なければ push
-    const existIdx = state.months.findIndex(m => m.period === period);
-    if (existIdx >= 0) {
-        state.months[existIdx] = { period, therapists: result.therapists, data: result.data };
+    // multi モード（問い合わせシート: 1ファイル内に複数月を含む）
+    let monthsToAdd;
+    if (result.multi) {
+        monthsToAdd = result.multi.map(m => ({
+            period: m.period,
+            therapists: m.therapists,
+            data: m.data,
+        }));
     } else {
-        state.months.push({ period, therapists: result.therapists, data: result.data });
+        monthsToAdd = [{
+            period: title || '',
+            therapists: result.therapists,
+            data: result.data,
+        }];
     }
+
+    // 追加 or 上書き
+    let lastPeriod = null;
+    monthsToAdd.forEach(m => {
+        const existIdx = state.months.findIndex(x => x.period === m.period);
+        if (existIdx >= 0) state.months[existIdx] = m;
+        else state.months.push(m);
+        lastPeriod = m.period;
+    });
 
     // 年月でソート
     state.months.sort((a, b) => extractYearMonth(a.period) - extractYearMonth(b.period));
@@ -162,10 +178,10 @@ function loadCSVText(text, title) {
     state.months.forEach(m => m.therapists.forEach(t => therapistSet.add(t)));
     state.allTherapists = [...therapistSet];
 
-    // currentMonthIdx を追加した月のインデックスに更新（ソート後）
-    const newIdx = state.months.findIndex(m => m.period === period);
+    // currentMonthIdx を最後に追加した月のインデックスに更新（ソート後）
+    const newIdx = state.months.findIndex(m => m.period === lastPeriod);
     if (isFirst) {
-        state.currentMonthIdx = 0;
+        state.currentMonthIdx = newIdx >= 0 ? newIdx : 0;
         state.currentTherapist = 'all';
         state.currentView = 'dashboard';
     } else {
@@ -441,6 +457,33 @@ function parseInquiryCSV(rows) {
         throw new Error('来院済みの患者データが見つかりませんでした（来院確認=TRUE かつ 担当者あり の行がありません）');
     }
 
+    // 年の特定：データ内の yyyy/mm/dd 形式から最頻年を取る、なければ2026
+    function detectBaseYear() {
+        const years = {};
+        for (const row of dataRows) {
+            for (const idx of [1, 6, 12]) {  // 受付日時 / 予約確定日 / 来院日
+                const s = String(row[idx] ?? '').trim();
+                const m = s.match(/(20\d{2})/);
+                if (m) years[m[1]] = (years[m[1]] || 0) + 1;
+            }
+        }
+        const sorted = Object.entries(years).sort((a, b) => b[1] - a[1]);
+        return sorted.length ? parseInt(sorted[0][0]) : new Date().getFullYear();
+    }
+    const baseYear = detectBaseYear();
+
+    // 来院日から「YYYY年M月」キーを生成（来院日が無効なら null → スキップ）
+    function getVisitPeriod(row) {
+        const s = String(row[12] ?? '').trim();
+        // 「2026/05/15 10:10:43」のような完全形式
+        let m = s.match(/(20\d{2})\/(\d{1,2})\/\d{1,2}/);
+        if (m) return `${m[1]}年${parseInt(m[2])}月`;
+        // 「05/15」のような MM/DD 形式 → baseYear を年に使う
+        m = s.match(/^(\d{1,2})\/(\d{1,2})/);
+        if (m) return `${baseYear}年${parseInt(m[1])}月`;
+        return null;
+    }
+
     // セラピスト名統合：短い名前(姓)を基準に、長い名前(姓+名)は姓に寄せる
     // 例: ['清家', '清家雅斗', '富澤'] → '清家雅斗' → '清家', '富澤'はそのまま
     const sortedNames = [...rawNames].sort((a, b) => a.length - b.length);
@@ -451,9 +494,17 @@ function parseInquiryCSV(rows) {
         nameMap[name] = shorter || name;
     });
     const therapistList = [...new Set(Object.values(nameMap))];
-    const data = {};
-    therapistList.forEach(t => { data[t] = emptyData(); });
-    data['院合計'] = emptyData();
+
+    // 月ごとに data を分けて持つ
+    const dataByPeriod = {};
+    function ensurePeriod(p) {
+        if (dataByPeriod[p]) return dataByPeriod[p];
+        const d = {};
+        therapistList.forEach(t => { d[t] = emptyData(); });
+        d['院合計'] = emptyData();
+        dataByPeriod[p] = d;
+        return d;
+    }
 
     // 年代の正規化
     function normalizeAge(raw) {
@@ -493,6 +544,10 @@ function parseInquiryCSV(rows) {
     }
 
     for (const row of dataRows) {
+        const period = getVisitPeriod(row);
+        if (!period) continue;  // 来院日不明はスキップ
+        const data = ensurePeriod(period);
+
         const rawTherapist = String(row[13] ?? '').trim();
         const therapist = nameMap[rawTherapist] || rawTherapist;
         const ageRaw    = String(row[14] ?? '').trim();
@@ -561,21 +616,37 @@ function parseInquiryCSV(rows) {
             if (c.treated > 0) c.rate = Math.round(c.purchase / c.treated * 100);
         });
     }
-    Object.values(data).forEach(d => {
-        if (d.total.treated > 0) d.total.rate = Math.round(d.total.purchase / d.total.treated * 100);
-        ['male', 'female'].forEach(g => {
-            if (d.gender[g].treated > 0) d.gender[g].rate = Math.round(d.gender[g].purchase / d.gender[g].treated * 100);
+    Object.values(dataByPeriod).forEach(data => {
+        Object.values(data).forEach(d => {
+            if (d.total.treated > 0) d.total.rate = Math.round(d.total.purchase / d.total.treated * 100);
+            ['male', 'female'].forEach(g => {
+                if (d.gender[g].treated > 0) d.gender[g].rate = Math.round(d.gender[g].purchase / d.gender[g].treated * 100);
+            });
+            calcRates(d.ageTotal);
+            calcRates(d.ageByGender.male);
+            calcRates(d.ageByGender.female);
+            calcRates(d.media.total);
+            calcRates(d.media.male);
+            calcRates(d.media.female);
+            calcRates(d.symptoms);
         });
-        calcRates(d.ageTotal);
-        calcRates(d.ageByGender.male);
-        calcRates(d.ageByGender.female);
-        calcRates(d.media.total);
-        calcRates(d.media.male);
-        calcRates(d.media.female);
-        calcRates(d.symptoms);
     });
 
-    return { therapists: therapistList, data };
+    // multi モードで返却（月別に分解）
+    const periodsSorted = Object.keys(dataByPeriod).sort((a, b) => {
+        const pa = a.match(/(\d{4})年(\d{1,2})月/);
+        const pb = b.match(/(\d{4})年(\d{1,2})月/);
+        if (!pa || !pb) return 0;
+        return (parseInt(pa[1]) * 100 + parseInt(pa[2])) - (parseInt(pb[1]) * 100 + parseInt(pb[2]));
+    });
+
+    const multi = periodsSorted.map(period => ({
+        period,
+        therapists: therapistList,
+        data: dataByPeriod[period],
+    }));
+
+    return { multi };
 }
 
 // ==================== 集計データ CSV パース（詳細分析） ====================
