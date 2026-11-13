@@ -1559,6 +1559,180 @@ function shoot(){
 }
 
 /* =========================================================
+   印刷用PDFの組み立て（iPadのホーム画面アプリでは window.print() が
+   効かないため、A4のページを自前で描いてPDF化し、共有シート経由で
+   プリントできるようにする。外部ライブラリは使わない）
+   ========================================================= */
+var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+var PRINT_VIA_SHARE = IS_IOS && SHARE_OK;
+var PFONT = '"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif';
+var PAGE_W = 1240, PAGE_H = 1754, PAGE_M = 71;   // A4縦 150dpi / 余白12mm
+
+// 指定幅に収まるようフォントサイズを下げる
+function fitFont(ctx, text, maxW, size, bold){
+  for(var s = size; s >= 12; s--){
+    ctx.font = (bold ? 'bold ' : '') + s + 'px ' + PFONT;
+    if(ctx.measureText(text).width <= maxW) return s;
+  }
+  return 12;
+}
+function wrapText(ctx, text, maxW){
+  var out = [], line = '';
+  for(var i=0;i<text.length;i++){
+    var t = line + text[i];
+    if(ctx.measureText(t).width > maxW && line){ out.push(line); line = text[i]; }
+    else line = t;
+  }
+  if(line) out.push(line);
+  return out;
+}
+function newPrintPage(name, sub, extra, landscape){
+  var W = landscape ? PAGE_H : PAGE_W, H = landscape ? PAGE_W : PAGE_H;
+  var c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  var x = c.getContext('2d');
+  x.fillStyle = '#fff'; x.fillRect(0,0,W,H);
+  x.fillStyle = '#000'; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
+  x.font = 'bold 36px ' + PFONT;
+  x.fillText(name + ' 様', PAGE_M, PAGE_M + 32);
+  var head = extra ? sub + '／' + extra : sub;
+  x.textAlign = 'right';
+  fitFont(x, head, W - 2*PAGE_M - 420, 21);
+  x.fillText(head, W - PAGE_M, PAGE_M + 30);
+  x.textAlign = 'left';
+  x.fillRect(PAGE_M, PAGE_M + 48, W - 2*PAGE_M, 2);
+  return {canvas:c, ctx:x, top: PAGE_M + 74, W:W, H:H};
+}
+// rows: [[{img, lines:[...]} ...] ...]
+function drawPrintRows(pg, rows, memoText){
+  var x = pg.ctx;
+  var contentW = pg.W - 2*PAGE_M;
+  var bottom = pg.H - PAGE_M;
+  x.font = '17px ' + PFONT; x.fillStyle = '#555'; x.textAlign = 'right';
+  x.fillText('印刷日 ' + fmtDate(todayStr()) + '　姿勢写真記録', pg.W - PAGE_M, bottom);
+  x.textAlign = 'left'; x.fillStyle = '#000';
+
+  var avail = bottom - 34 - pg.top;
+  var memoLines = null;
+  if(memoText){
+    x.font = '18px ' + PFONT;
+    memoLines = [];
+    memoText.split('\n').forEach(function(seg){
+      memoLines = memoLines.concat(wrapText(x, seg, contentW - 20));
+    });
+    memoLines = memoLines.slice(0, 5);
+    avail -= memoLines.length * 26 + 26;
+  }
+  var gap = 26;
+  var maxRowH = (avail - gap*(rows.length-1)) / rows.length;
+
+  // 1回目：各行の実寸を測り、余った余白を上下に均等配分する（間延び防止）
+  var metrics = rows.map(function(row){
+    var n = row.length;
+    var cellW = (contentW - gap*(n-1)) / n;
+    var capH = 14 + row[0].lines.length * 26;
+    var boxH = maxRowH - capH;
+    var imgH = 0;
+    row.forEach(function(cell){
+      var im = cell.img;
+      var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+      imgH = Math.max(imgH, ih * Math.min(cellW/iw, boxH/ih));
+    });
+    return {cellW:cellW, capH:capH, imgH:imgH, rowH:imgH + capH};
+  });
+  var used = metrics.reduce(function(a,m){ return a + m.rowH; }, 0) + gap*(rows.length-1);
+  var y = pg.top + Math.max(0, (avail - used) / 2);
+
+  rows.forEach(function(row, ri){
+    var m = metrics[ri];
+    var cellW = m.cellW, capH = m.capH, imgH = m.imgH, rowH = m.rowH;
+    row.forEach(function(cell, i){
+      var cx = PAGE_M + i*(cellW+gap);
+      var im = cell.img;
+      var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+      var sc = Math.min(cellW/iw, imgH/ih);
+      var w = iw*sc, h = ih*sc;
+      x.drawImage(im, cx + (cellW-w)/2, y + (imgH-h)/2, w, h);
+      var ty = y + imgH + 26;
+      x.textAlign = 'center';
+      cell.lines.forEach(function(ln, li){
+        var size = fitFont(x, ln, cellW - 6, li === 0 ? 21 : 19, li === 0);
+        x.font = (li === 0 ? 'bold ' : '') + size + 'px ' + PFONT;
+        x.fillStyle = li === 0 ? '#000' : '#333';
+        x.fillText(ln, cx + cellW/2, ty);
+        ty += 26;
+      });
+      x.textAlign = 'left'; x.fillStyle = '#000';
+    });
+    y += rowH + gap;
+  });
+
+  if(memoLines && memoLines.length){
+    var my = y + 4;
+    x.fillStyle = '#999';
+    x.fillRect(PAGE_M, my - 18, 4, memoLines.length*26 + 6);
+    x.fillStyle = '#000'; x.font = '18px ' + PFONT;
+    memoLines.forEach(function(ln){ x.fillText(ln, PAGE_M + 16, my); my += 26; });
+  }
+}
+function canvasJPEG(canvas){
+  return toBlobP(canvas, 'image/jpeg', 0.9).then(function(b){
+    return b.arrayBuffer().then(function(ab){
+      return {bytes:new Uint8Array(ab), w:canvas.width, h:canvas.height};
+    });
+  });
+}
+// JPEG1枚＝1ページの最小構成のPDFを組み立てる
+function buildPDF(pages){
+  var enc = new TextEncoder();
+  var chunks = [], len = 0, offs = [];
+  function put(d){
+    var u = (typeof d === 'string') ? enc.encode(d) : d;
+    chunks.push(u); len += u.length;
+  }
+  function startObj(num){ offs[num] = len; }
+  var A4S = 595.28, A4L = 841.89;
+  var total = 2 + pages.length*3;
+
+  put('%PDF-1.4\n');
+  put(new Uint8Array([0x25,0xE2,0xE3,0xCF,0xD3,0x0A]));
+
+  startObj(1);
+  put('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+
+  var kids = [];
+  for(var i=0;i<pages.length;i++) kids.push((3 + i*3) + ' 0 R');
+  startObj(2);
+  put('2 0 obj\n<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + pages.length + ' >>\nendobj\n');
+
+  pages.forEach(function(p, i){
+    var pageN = 3 + i*3, imgN = pageN + 1, conN = pageN + 2;
+    var PW = p.w > p.h ? A4L : A4S, PH = p.w > p.h ? A4S : A4L;
+    startObj(pageN);
+    put(pageN + ' 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + PW + ' ' + PH + ']' +
+        ' /Resources << /XObject << /Im0 ' + imgN + ' 0 R >> >> /Contents ' + conN + ' 0 R >>\nendobj\n');
+    startObj(imgN);
+    put(imgN + ' 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + p.w + ' /Height ' + p.h +
+        ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + p.bytes.length + ' >>\nstream\n');
+    put(p.bytes);
+    put('\nendstream\nendobj\n');
+    var content = 'q ' + PW + ' 0 0 ' + PH + ' 0 0 cm /Im0 Do Q\n';
+    startObj(conN);
+    put(conN + ' 0 obj\n<< /Length ' + content.length + ' >>\nstream\n' + content + 'endstream\nendobj\n');
+  });
+
+  var xref = len;
+  var s = 'xref\n0 ' + total + '\n0000000000 65535 f \n';
+  for(var n=1;n<total;n++){
+    s += ('0000000000' + offs[n]).slice(-10) + ' 00000 n \n';
+  }
+  s += 'trailer\n<< /Size ' + total + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF\n';
+  put(s);
+  return new Blob(chunks, {type:'application/pdf'});
+}
+
+/* =========================================================
    印刷
    ========================================================= */
 var printURLs = [];
@@ -1571,11 +1745,15 @@ function printTargets(){
 function openPrintPanel(){
   var recs = printTargets();
   if(!recs.length) return;
-  $('ppSub').textContent = recs.length > 1
-    ? '比較中のため、' + fmtDate(recs[0].date) + ' と ' + fmtDate(recs[1].date) + ' の2時点を並べて印刷します。'
+  var what = recs.length > 1
+    ? '比較中のため、' + fmtDate(recs[0].date) + ' と ' + fmtDate(recs[1].date) + ' の2時点を並べます。'
     : fmtDate(recs[0].date) + ' の正面・側面を印刷します。';
+  $('ppSub').textContent = what + (PRINT_VIA_SHARE
+    ? '　選ぶと印刷用PDFができ、共有メニューが開きます。そこから「プリント」を選んでください。'
+    : '');
   var p = $('printPanel');
   p.hidden = !p.hidden;
+  if(!p.hidden) prebuildPDFs();
 }
 function clearPrintArea(){
   $('printArea').textContent = '';
@@ -1594,25 +1772,8 @@ function imgFor(rec, k){
     });
   });
 }
-function printCell(rec, k, img, withDate){
-  var d = el('div','p-cell');
-  d.appendChild(img);
-  var cap = el('div','p-cap');
-  cap.appendChild(el('b', null, SLOT_LABEL[k]));
-  cap.appendChild(el('span', null, '　' + linesText(rec[k])));
-  if(withDate){ cap.appendChild(el('br')); cap.appendChild(el('span', null, fmtDate(rec.date))); }
-  d.appendChild(cap);
-  return d;
-}
-function doPrint(layout){
-  var recs = printTargets();
-  if(!recs.length) return;
-  var multi = recs.length > 1;
-  var cur = recs[recs.length-1];
-  clearPrintArea();
-  $('printPanel').hidden = true;
-  toast('印刷の準備中…');
-
+// 画像をまとめて用意する
+function collectPrintImages(recs){
   var jobs = [];
   recs.forEach(function(r){
     SLOT_KEYS.forEach(function(k){
@@ -1620,62 +1781,161 @@ function doPrint(layout){
                      : Promise.resolve(null));
     });
   });
-  Promise.all(jobs).then(function(items){
+  return Promise.all(jobs).then(function(items){
     var got = {};
     items.forEach(function(it){ if(it) got[it.r.id+'|'+it.k] = it.img; });
-    var area = $('printArea');
-    var sub = '撮影日 ' + (multi ? recs.map(function(r){ return fmtDate(r.date); }).join(' → ')
-                                 : fmtDate(cur.date));
-    function head(extra){
-      var h = el('div','p-head');
-      h.appendChild(el('div','p-name', cur.name + ' 様'));
-      h.appendChild(el('div','p-sub', extra ? sub + '／' + extra : sub));
-      return h;
-    }
-    function foot(){ return el('div','p-foot', '印刷日 ' + fmtDate(todayStr()) + '　姿勢写真記録'); }
-    function rowFor(k, cls){
-      var row = el('div','p-row '+cls), n = 0;
-      recs.forEach(function(r){
-        var img = got[r.id+'|'+k];
-        if(!img) return;
-        n++;
-        row.appendChild(printCell(r, k, img, multi));
-      });
-      return n ? row : null;
-    }
-
-    if(layout === 'duplex'){
-      SLOT_KEYS.forEach(function(k){
-        var row = rowFor(k, multi ? 'p-img-lg' : 'p-img-xl');
-        if(!row) return;
-        var page = el('div','p-page');
-        page.appendChild(head(SLOT_LABEL[k]));
-        page.appendChild(row);
-        if(k === 'side' && cur.memo && cur.memo.trim()) page.appendChild(el('div','p-memo', cur.memo));
-        page.appendChild(foot());
-        area.appendChild(page);
-      });
+    return got;
+  });
+}
+// レイアウトを決める（画面印刷とPDFで共通）
+function printPlan(layout, recs, got){
+  var multi = recs.length > 1;
+  var cur = recs[recs.length-1];
+  var sub = '撮影日 ' + (multi ? recs.map(function(r){ return fmtDate(r.date); }).join(' → ')
+                               : fmtDate(cur.date));
+  function cells(k){
+    var out = [];
+    recs.forEach(function(r){
+      var img = got[r.id+'|'+k];
+      if(!img) return;
+      var lines = [SLOT_LABEL[k], linesText(r[k])];
+      if(multi) lines.push(fmtDate(r.date));
+      out.push({img:img, lines:lines});
+    });
+    return out;
+  }
+  var pages = [];
+  if(layout === 'duplex'){
+    SLOT_KEYS.forEach(function(k){
+      var row = cells(k);
+      if(row.length) pages.push({extra:SLOT_LABEL[k], rows:[row], memo:'',
+                                 cls: row.length > 1 ? 'p-img-lg' : 'p-img-xl'});
+    });
+  } else {
+    var rows = [];
+    if(multi){
+      SLOT_KEYS.forEach(function(k){ var r = cells(k); if(r.length) rows.push(r); });
     } else {
-      var page = el('div','p-page');
-      page.appendChild(head(''));
-      if(multi){
-        SLOT_KEYS.forEach(function(k){
-          var row = rowFor(k, 'p-img-sm');
-          if(row) page.appendChild(row);
-        });
-      } else {
-        var row = el('div','p-row p-img-md');
-        SLOT_KEYS.forEach(function(k){
-          var img = got[cur.id+'|'+k];
-          if(img) row.appendChild(printCell(cur, k, img, false));
-        });
-        page.appendChild(row);
-      }
-      if(cur.memo && cur.memo.trim()) page.appendChild(el('div','p-memo', cur.memo));
-      page.appendChild(foot());
-      area.appendChild(page);
+      var one = [];
+      SLOT_KEYS.forEach(function(k){ var r = cells(k); if(r.length) one.push(r[0]); });
+      if(one.length) rows.push(one);
     }
-    if(!area.childNodes.length){ alert('印刷できる写真がありません。'); return; }
+    if(rows.length) pages.push({extra:'', rows:rows, memo:'',
+                                cls: rows.length > 1 ? 'p-img-sm' : 'p-img-md'});
+  }
+  if(pages.length && cur.memo && cur.memo.trim()) pages[pages.length-1].memo = cur.memo;
+  return {pages:pages, sub:sub, name:cur.name, rec:cur};
+}
+function pdfName(plan){
+  return safeName(plan.name) + '_' + String(plan.rec.date).replace(/-/g,'') + '_姿勢記録.pdf';
+}
+// 画面印刷用のDOMを組む（PC・Mac）
+function renderPrintDOM(plan){
+  var area = $('printArea');
+  area.textContent = '';
+  plan.pages.forEach(function(pg){
+    var page = el('div','p-page');
+    var h = el('div','p-head');
+    h.appendChild(el('div','p-name', plan.name + ' 様'));
+    h.appendChild(el('div','p-sub', pg.extra ? plan.sub + '／' + pg.extra : plan.sub));
+    page.appendChild(h);
+    pg.rows.forEach(function(row){
+      var r = el('div','p-row ' + pg.cls);
+      row.forEach(function(c){
+        var d = el('div','p-cell');
+        d.appendChild(c.img);
+        var cap = el('div','p-cap');
+        c.lines.forEach(function(ln, i){
+          var e = el('div', null, ln);
+          if(i === 0) e.style.fontWeight = '700';
+          cap.appendChild(e);
+        });
+        d.appendChild(cap);
+        r.appendChild(d);
+      });
+      page.appendChild(r);
+    });
+    if(pg.memo) page.appendChild(el('div','p-memo', pg.memo));
+    page.appendChild(el('div','p-foot', '印刷日 ' + fmtDate(todayStr()) + '　姿勢写真記録'));
+    area.appendChild(page);
+  });
+}
+// 印刷用PDFを作る（iPad用）
+function makePDF(plan){
+  var canvases = plan.pages.map(function(pg){
+    // 2枚を横に並べるページは用紙を横向きにして写真を大きく出す
+    var landscape = pg.rows.length === 1 && pg.rows[0].length === 2;
+    var p = newPrintPage(plan.name, plan.sub, pg.extra, landscape);
+    drawPrintRows(p, pg.rows, pg.memo);
+    return p.canvas;
+  });
+  return Promise.all(canvases.map(canvasJPEG)).then(buildPDF);
+}
+// 共有シートは「押した瞬間」しか開けないので、パネルを出した時点で作っておく
+var pdfCache = {};
+function prebuildPDFs(){
+  if(!PRINT_VIA_SHARE) return;
+  var recs = printTargets();
+  if(!recs.length) return;
+  pdfCache = {};
+  clearPrintArea();
+  collectPrintImages(recs).then(function(got){
+    ['duplex','single'].forEach(function(lay){
+      var plan = printPlan(lay, recs, got);
+      if(!plan.pages.length) return;
+      makePDF(plan).then(function(blob){
+        try { pdfCache[lay] = new File([blob], pdfName(plan), {type:'application/pdf'}); }
+        catch(e){ pdfCache[lay] = {blob:blob, name:pdfName(plan)}; }
+      }).catch(function(){});
+    });
+  }).catch(function(){});
+}
+function doPrint(layout){
+  var recs = printTargets();
+  if(!recs.length) return;
+  $('printPanel').hidden = true;
+
+  // iPad：用意しておいたPDFを共有シートへ（「プリント」を選べる）
+  if(PRINT_VIA_SHARE){
+    var f = pdfCache[layout];
+    if(f && f.name && f.size != null){
+      navigator.share({files:[f]}).catch(function(e){
+        if(e && e.name === 'AbortError') return;
+        download(f, f.name);
+        toast('PDFを保存しました');
+      });
+      return;
+    }
+    toast('印刷用PDFを準備中…');
+    clearPrintArea();
+    collectPrintImages(recs).then(function(got){
+      var plan = printPlan(layout, recs, got);
+      if(!plan.pages.length){ alert('印刷できる写真がありません。'); return; }
+      return makePDF(plan).then(function(blob){
+        var file;
+        try { file = new File([blob], pdfName(plan), {type:'application/pdf'}); } catch(e){}
+        if(file && navigator.canShare && navigator.canShare({files:[file]})){
+          return navigator.share({files:[file]}).catch(function(e){
+            if(e && e.name === 'AbortError') return;
+            download(blob, pdfName(plan)); toast('PDFを保存しました');
+          });
+        }
+        download(blob, pdfName(plan));
+        toast('PDFを保存しました');
+      });
+    }).catch(function(e){
+      alert('印刷用PDFを作れませんでした：' + (e && e.message ? e.message : e));
+    });
+    return;
+  }
+
+  // PC・Mac：ブラウザの印刷
+  clearPrintArea();
+  toast('印刷の準備中…');
+  collectPrintImages(recs).then(function(got){
+    var plan = printPlan(layout, recs, got);
+    if(!plan.pages.length){ alert('印刷できる写真がありません。'); return; }
+    renderPrintDOM(plan);
     setTimeout(function(){ window.print(); }, 150);
   }).catch(function(e){
     alert('印刷の準備に失敗しました：' + (e && e.message ? e.message : e));
