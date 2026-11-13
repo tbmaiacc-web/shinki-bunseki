@@ -1,6 +1,6 @@
 /* 姿勢写真記録 — オフライン用キャッシュ
    記録データ（写真・線・氏名）はここでは一切扱わない。IndexedDB に残り、外部へは出ない。 */
-var CACHE = 'posture-v1';
+var CACHE = 'posture-v2';
 var ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-512.png'];
 
 self.addEventListener('install', function(e){

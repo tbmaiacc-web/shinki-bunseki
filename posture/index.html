@@ -146,6 +146,13 @@ label.field textarea{min-height:88px;resize:vertical}
 .swatch.on{border-color:var(--fg);box-shadow:inset 0 0 0 2px #fff}
 .wbtn{min-height:40px;padding:4px 14px;border:2px solid var(--line-strong);border-radius:8px;background:#fff;font-weight:700;cursor:pointer}
 .wbtn.on{border-color:var(--fg);background:var(--fg);color:#fff}
+.seg.chips{gap:6px}
+.chip{
+  min-height:40px;padding:4px 12px;border:2px solid var(--line-strong);border-radius:999px;
+  background:#fff;font-weight:700;font-size:.9rem;cursor:pointer;white-space:nowrap;
+}
+.chip.on{border-color:var(--fg);background:var(--fg);color:#fff}
+.chip.add{border-style:dashed;font-weight:600;color:var(--fg-sub)}
 .hint{font-size:.82rem;color:var(--fg-sub);margin:6px 0 0}
 
 /* ---------- 詳細 ---------- */
@@ -158,8 +165,8 @@ label.field textarea{min-height:88px;resize:vertical}
 .rec-col .tag{font-size:.75rem;padding:2px 8px;border-radius:999px;background:var(--fg);color:#fff}
 .rec-col .tag.alt{background:var(--bg-sub);color:var(--fg-sub);border:1px solid var(--line)}
 .photos{display:flex;flex-direction:column;gap:12px}
-.photo-box h4{margin:0 0 6px;font-size:.95rem;display:flex;align-items:baseline;gap:8px}
-.photo-box h4 .tilt{font-size:.9rem}
+.photo-box h4{margin:0 0 6px;font-size:.95rem;display:flex;align-items:baseline;gap:4px 8px;flex-wrap:wrap}
+.photo-box h4 .tilt{font-size:.85rem;margin-left:auto;text-align:right}
 .memo-box{margin:14px 12px;padding:10px 12px;border-left:4px solid var(--line-strong);background:var(--bg-sub);white-space:pre-wrap;border-radius:0 8px 8px 0}
 @media (orientation:landscape) and (min-width:700px){
   .pairs.single .photos{flex-direction:row}
@@ -183,6 +190,73 @@ label.field textarea{min-height:88px;resize:vertical}
 .tools{margin:26px 12px 0;padding-top:14px;border-top:1px solid var(--line)}
 .tools h3{font-size:.95rem;color:var(--fg-sub);margin-bottom:8px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* ---------- 印刷の選択パネル ---------- */
+.print-panel{margin:12px;padding:12px;border:2px solid var(--fg);border-radius:12px}
+.print-panel .pp-t{font-weight:700;margin-bottom:4px}
+.print-panel .pp-s{font-size:.85rem;color:var(--fg-sub);margin-bottom:10px}
+.print-panel .pp-btn{
+  display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+  width:100%;margin-bottom:8px;text-align:left;padding:12px 14px;
+}
+.print-panel .pp-btn small{font-weight:400;font-size:.82rem;color:var(--fg-sub)}
+.print-panel .pp-btn.primary small{color:#ddd}
+
+/* ---------- アプリ内カメラ ---------- */
+#v-cam{
+  position:fixed;inset:0;z-index:60;background:#000;color:#fff;
+  display:flex;flex-direction:column;
+}
+#v-cam.hidden{display:none}
+.cam-stage{position:relative;flex:1;min-height:0;overflow:hidden}
+#camVideo{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+.cam-overlay{position:absolute;pointer-events:none}
+.cam-overlay svg{width:100%;height:100%;display:block}
+.cam-bar{
+  display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;
+  padding:12px 14px;padding-bottom:max(12px, env(safe-area-inset-bottom));
+  background:#000;
+}
+.cam-bar .cam-left{justify-self:start}
+.cam-bar .cam-right{justify-self:end;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.cam-bar .shutter{justify-self:center}
+.cam-bar .btn{background:transparent;color:#fff;border-color:#fff;white-space:nowrap;padding:6px 10px}
+.cam-bar .btn:active{background:#333}
+.shutter{
+  width:74px;height:74px;border-radius:50%;border:5px solid #fff;background:#fff;
+  cursor:pointer;flex:0 0 auto;box-shadow:0 0 0 4px rgba(255,255,255,.25);
+}
+.shutter:active{background:#bbb}
+.cam-note{grid-column:1/-1;text-align:center;font-size:.8rem;color:#bbb;margin-top:2px;white-space:nowrap}
+
+/* ---------- 印刷 ---------- */
+#printArea{display:none}
+@media print{
+  body{padding:0;background:#fff}
+  .view,#toast,.notice,#v-cam{display:none !important}
+  #printArea{display:block}
+  @page{size:A4 portrait;margin:12mm}
+  .p-page{page-break-after:always;break-after:page}
+  .p-page:last-child{page-break-after:auto;break-after:auto}
+  .p-head{
+    display:flex;justify-content:space-between;align-items:baseline;gap:8mm;
+    border-bottom:1.2pt solid #000;padding-bottom:2.5mm;margin-bottom:4mm;
+  }
+  .p-name{font-size:15pt;font-weight:700}
+  .p-sub{font-size:10pt}
+  .p-row{display:flex;gap:6mm;justify-content:center;align-items:flex-start}
+  .p-row+.p-row{margin-top:5mm}
+  .p-cell{flex:1 1 0;min-width:0;text-align:center}
+  .p-cell img{display:block;margin:0 auto;max-width:100%;width:auto;height:auto}
+  .p-img-xl img{max-height:222mm}
+  .p-img-lg img{max-height:186mm}
+  .p-img-md img{max-height:128mm}
+  .p-img-sm img{max-height:100mm}
+  .p-cap{font-size:9.5pt;margin-top:1.5mm;line-height:1.3}
+  .p-cap b{font-size:10.5pt}
+  .p-memo{margin-top:5mm;font-size:9.5pt;white-space:pre-wrap;border-left:2pt solid #999;padding-left:3mm}
+  .p-foot{margin-top:4mm;font-size:8.5pt;color:#555;text-align:right}
+}
 </style>
 </head>
 <body>
@@ -251,11 +325,40 @@ label.field textarea{min-height:88px;resize:vertical}
   </div>
   <div id="dPairs" class="pairs"></div>
   <div id="dMemo" class="memo-box" hidden></div>
+  <div id="printPanel" class="print-panel" hidden>
+    <div class="pp-t">印刷のしかたを選んでください</div>
+    <div class="pp-s" id="ppSub"></div>
+    <button class="btn primary pp-btn" data-layout="duplex">両面用（2ページ）
+      <small>1ページ目に正面、2ページ目に側面。プリンタを両面設定にすると1枚の表裏になります</small></button>
+    <button class="btn pp-btn" data-layout="single">1ページに2枚
+      <small>正面と側面を横並びで1枚に収めます</small></button>
+    <button class="btn ghost" data-act="close" style="width:100%">キャンセル</button>
+  </div>
   <div class="section row">
+    <button id="dPrint" class="btn">印刷</button>
     <button id="dEdit" class="btn">編集</button>
     <button id="dDel" class="btn danger">削除</button>
   </div>
 </section>
+
+<!-- ======================= アプリ内カメラ ======================= -->
+<section id="v-cam" class="hidden" aria-hidden="true">
+  <div class="cam-stage" id="camStage">
+    <video id="camVideo" playsinline autoplay muted></video>
+    <div id="camOverlay" class="cam-overlay"></div>
+  </div>
+  <div class="cam-bar">
+    <button id="camCancel" class="btn sm cam-left">キャンセル</button>
+    <button id="camShot" class="shutter" aria-label="撮影"></button>
+    <div class="cam-right">
+      <button id="camGuide" class="btn sm">ガイド：中央線</button>
+      <button id="camSwitch" class="btn sm">カメラ切替</button>
+    </div>
+    <div class="cam-note" id="camNote">ガイド線は写真には写りません</div>
+  </div>
+</section>
+
+<div id="printArea" aria-hidden="true"></div>
 
 <noscript><p class="section">このアプリはJavaScriptが必要です。</p></noscript>
 
@@ -419,7 +522,7 @@ function fileToPhoto(file){
     return shrink(src, MAX_EDGE, JPEG_Q).then(function(main){
       var photo = {
         blob: main.blob, w: main.w, h: main.h,
-        line: defaultLine(main.w, main.h), thumb: null
+        lines: [defaultLine(main.w, main.h)], thumb: null
       };
       return makeThumb(src, photo).then(function(t){
         photo.thumb = t;
@@ -437,15 +540,28 @@ function makeThumb(src, photo){
   c.width = cw; c.height = ch;
   var ctx = c.getContext('2d');
   ctx.drawImage(src, 0, 0, cw, ch);
-  if(photo.line) drawLine(ctx, photo.line, w, h, cw/w, false, 1);
+  drawLines(ctx, photo, cw/w, 1, -1);
   return toBlobP(c, 'image/jpeg', 0.7);
 }
 
 /* =========================================================
    線
    ========================================================= */
-function defaultLine(w, h){
+var MAX_LINES = 4;
+function defaultLine(w, h){            // 垂直線（中央）
   return {x1:w/2, y1:h*0.04, x2:w/2, y2:h*0.96, color:'red', width:1};
+}
+function defaultHLine(w, h){           // 水平線（中央）
+  return {x1:w*0.04, y1:h/2, x2:w*0.96, y2:h/2, color:'yellow', width:1};
+}
+// 旧形式（line 1本）も読めるようにする
+function linesOf(photo){
+  if(!photo) return [];
+  if(!photo.lines){
+    photo.lines = photo.line ? [photo.line] : [];
+    delete photo.line;
+  }
+  return photo.lines;
 }
 function strokePx(level, w, h){
   var base = Math.min(w, h);
@@ -484,6 +600,24 @@ function tiltText(l){
   var a = Math.abs(d);
   if(a < 0.05) return '0.0°（垂直）';
   return a.toFixed(1) + '°（上が' + (d > 0 ? '右' : '左') + '）';
+}
+// 縦寄りの線は垂直基準、横寄りの線は水平基準で読む
+function isHorizontal(l){ return Math.abs(tiltDeg(l)) > 45; }
+function lineText(l){
+  if(!l) return '—';
+  if(!isHorizontal(l)) return '垂直との差 ' + tiltText(l);
+  var dx = l.x2 - l.x1, dy = l.y2 - l.y1;
+  if(dx < 0){ dx = -dx; dy = -dy; }
+  var h = Math.atan2(dy, dx) * 180 / Math.PI;    // 正 = 右端が下がる
+  var a = Math.abs(h);
+  if(a < 0.05) return '水平との差 0.0°（水平）';
+  return '水平との差 ' + a.toFixed(1) + '°（右が' + (h > 0 ? '下がる' : '上がる') + '）';
+}
+function lineLabel(l, i){ return '線' + (i+1) + (isHorizontal(l) ? '（横）' : '（縦）'); }
+function linesText(photo){
+  var ls = linesOf(photo);
+  if(!ls.length) return '線なし';
+  return ls.map(function(l){ return lineText(l); }).join(' ／ ');
 }
 
 /* =========================================================
@@ -531,13 +665,20 @@ function drawLine(ctx, line, natW, natH, scale, handles, dpr){
   }
   ctx.restore();
 }
-function drawPhoto(canvas, img, photo, handles){
+// sel: ハンドルを表示する線の番号（表示専用なら -1）
+function drawPhoto(canvas, img, photo, sel){
   var g = fitCanvas(canvas, photo.w, photo.h);
   var ctx = canvas.getContext('2d');
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  if(photo.line) drawLine(ctx, photo.line, photo.w, photo.h, g.scale, handles, g.dpr);
+  drawLines(ctx, photo, g.scale, g.dpr, sel);
   return g;
+}
+function drawLines(ctx, photo, scale, dpr, sel){
+  var ls = linesOf(photo);
+  for(var i=0;i<ls.length;i++){
+    drawLine(ctx, ls[i], photo.w, photo.h, scale, i === sel, dpr);
+  }
 }
 function addRenderTask(canvas, img, photo, handles){
   renderTasks.push({canvas:canvas, img:img, photo:photo, handles:handles});
@@ -570,6 +711,8 @@ function showView(name){
   ['list','edit','detail'].forEach(function(v){
     $('v-'+v).classList.toggle('hidden', v !== name);
   });
+  var pp = $('printPanel');
+  if(pp) pp.hidden = true;
   window.scrollTo(0,0);
 }
 function clearThumbs(){
@@ -688,8 +831,8 @@ function openEdit(rec){
       decodeBlob(p.blob).then(function(img){
         edit.slots[k] = {
           photo: {blob:p.blob, w:p.w, h:p.h, thumb:p.thumb,
-                  line: p.line ? Object.assign({}, p.line) : defaultLine(p.w, p.h)},
-          img: img
+                  lines: linesOf(p).map(function(l){ return Object.assign({}, l); })},
+          img: img, sel: null
         };
         renderSlot(k);
       }).catch(function(e){ toast(SLOT_LABEL[k]+'の画像を読めませんでした'); });
@@ -721,44 +864,75 @@ function buildSlots(){
         '<button type="button" class="btn sm danger" data-el="clear" hidden>写真を削除</button>'+
       '</div>'+
       '<div class="line-ctl" data-el="ctl" hidden>'+
-        '<div class="seg"><span class="lbl">線の色</span>'+
+        '<div class="seg chips" data-el="chips"></div>'+
+        '<div class="seg" data-el="sel1"><span class="lbl">色</span>'+
           '<button type="button" class="swatch" data-color="red"><i style="background:'+COLORS.red+'"></i></button>'+
           '<button type="button" class="swatch" data-color="yellow"><i style="background:'+COLORS.yellow+'"></i></button>'+
           '<button type="button" class="swatch" data-color="white"><i style="background:'+COLORS.white+'"></i></button>'+
-        '</div>'+
-        '<div class="seg"><span class="lbl">太さ</span>'+
+          '<span class="lbl" style="margin-left:8px">太さ</span>'+
           '<button type="button" class="wbtn" data-w="1">細</button>'+
           '<button type="button" class="wbtn" data-w="2">太</button>'+
-          '<button type="button" class="btn sm" data-el="reset" style="margin-left:auto">線を初期位置に</button>'+
         '</div>'+
-        '<p class="hint">両端の丸いハンドルをドラッグすると位置と角度が変わります。線の上をドラッグすると線全体が動きます。</p>'+
+        '<div class="seg" data-el="sel2">'+
+          '<button type="button" class="btn sm" data-el="reset">位置を戻す</button>'+
+          '<button type="button" class="btn sm danger" data-el="delline">この線を消す</button>'+
+        '</div>'+
+        '<p class="hint">両端の丸いハンドルで位置と角度を調整できます。線の上をドラッグすると線全体が動きます。線が複数あるときは、動かしたい線をタップしてから操作してください。</p>'+
       '</div>';
     host.appendChild(slot);
 
     var q = function(n){ return slot.querySelector('[data-el="'+n+'"]'); };
     q('cam').addEventListener('change', function(e){ onPick(k, e.target); });
     q('pick').addEventListener('change', function(e){ onPick(k, e.target); });
+    // ガイド付きのアプリ内カメラを使う（使えない端末は端末標準のカメラへ）
+    q('camLabel').parentElement.addEventListener('click', function(e){
+      if(CAM_OK){ e.preventDefault(); openCam(k); }
+    });
     q('clear').addEventListener('click', function(){
       if(!confirm(SLOT_LABEL[k]+'の写真を削除します。よろしいですか？')) return;
       edit.slots[k] = null; renderSlot(k);
     });
     q('reset').addEventListener('click', function(){
+      var l = selLine(k); if(!l) return;
+      var s = edit.slots[k];
+      var def = isHorizontal(l) ? defaultHLine(s.photo.w, s.photo.h) : defaultLine(s.photo.w, s.photo.h);
+      def.color = l.color; def.width = l.width;
+      s.photo.lines[s.sel] = def;
+      renderSlot(k);
+    });
+    q('delline').addEventListener('click', function(){
       var s = edit.slots[k]; if(!s) return;
-      var c = s.photo.line.color, w = s.photo.line.width;
-      s.photo.line = defaultLine(s.photo.w, s.photo.h);
-      s.photo.line.color = c; s.photo.line.width = w;
+      var ls = linesOf(s.photo);
+      if(!ls.length) return;
+      ls.splice(s.sel, 1);
+      s.sel = Math.min(s.sel, ls.length-1);
+      renderSlot(k);
+    });
+    q('chips').addEventListener('click', function(e){
+      var b = e.target.closest ? e.target.closest('button') : null;
+      if(!b) return;
+      var s = edit.slots[k]; if(!s) return;
+      var ls = linesOf(s.photo);
+      if(b.dataset.add){
+        if(ls.length >= MAX_LINES){ toast('線は'+MAX_LINES+'本までです'); return; }
+        ls.push(b.dataset.add === 'h' ? defaultHLine(s.photo.w, s.photo.h)
+                                      : defaultLine(s.photo.w, s.photo.h));
+        s.sel = ls.length - 1;
+      } else if(b.dataset.i != null){
+        s.sel = Number(b.dataset.i);
+      }
       renderSlot(k);
     });
     slot.querySelectorAll('.swatch').forEach(function(b){
       b.addEventListener('click', function(){
-        var s = edit.slots[k]; if(!s) return;
-        s.photo.line.color = b.dataset.color; renderSlot(k);
+        var l = selLine(k); if(!l) return;
+        l.color = b.dataset.color; renderSlot(k);
       });
     });
     slot.querySelectorAll('.wbtn').forEach(function(b){
       b.addEventListener('click', function(){
-        var s = edit.slots[k]; if(!s) return;
-        s.photo.line.width = Number(b.dataset.w); renderSlot(k);
+        var l = selLine(k); if(!l) return;
+        l.width = Number(b.dataset.w); renderSlot(k);
       });
     });
     attachDrag(k, q('cv'));
@@ -768,13 +942,18 @@ function onPick(k, input){
   var file = input.files && input.files[0];
   input.value = '';
   if(!file) return;
+  applyPhoto(k, file);
+}
+function applyPhoto(k, file){
   toast('画像を処理中…');
-  fileToPhoto(file).then(function(r){
+  return fileToPhoto(file).then(function(r){
     var prev = edit.slots[k];
-    if(prev && prev.photo && prev.photo.line){
-      r.photo.line.color = prev.photo.line.color;
-      r.photo.line.width = prev.photo.line.width;
+    var pl = prev && prev.photo ? linesOf(prev.photo)[0] : null;
+    if(pl && r.photo.lines[0]){            // 色と太さは前の設定を引き継ぐ
+      r.photo.lines[0].color = pl.color;
+      r.photo.lines[0].width = pl.width;
     }
+    r.sel = null;
     edit.slots[k] = r;
     renderSlot(k);
     toast(SLOT_LABEL[k]+'を取り込みました');
@@ -807,19 +986,49 @@ function renderSlot(k){
   q('camLabel').textContent = '撮り直す';
   q('pickLabel').textContent = '別の画像を選択';
 
-  var line = s.photo.line;
+  var ls = linesOf(s.photo);
+  if(s.sel == null || s.sel >= ls.length) s.sel = ls.length - 1;
+
+  // 線の選択チップ＋追加ボタン
+  var chips = q('chips');
+  chips.textContent = '';
+  ls.forEach(function(l, i){
+    var b = el('button','chip' + (i === s.sel ? ' on' : ''), lineLabel(l, i));
+    b.type = 'button'; b.dataset.i = i;
+    chips.appendChild(b);
+  });
+  if(ls.length < MAX_LINES){
+    var av = el('button','chip add','＋ 縦線'); av.type='button'; av.dataset.add='v';
+    var ah = el('button','chip add','＋ 横線'); ah.type='button'; ah.dataset.add='h';
+    chips.appendChild(av); chips.appendChild(ah);
+  }
+
+  var line = ls[s.sel] || null;
+  q('sel1').hidden = !line;
+  q('sel2').hidden = !line;
   slot.querySelectorAll('.swatch').forEach(function(b){
-    b.classList.toggle('on', b.dataset.color === line.color);
+    b.classList.toggle('on', !!line && b.dataset.color === line.color);
   });
   slot.querySelectorAll('.wbtn').forEach(function(b){
-    b.classList.toggle('on', Number(b.dataset.w) === line.width);
+    b.classList.toggle('on', !!line && Number(b.dataset.w) === line.width);
   });
   var t = q('tilt');
-  t.className = 'tilt';
-  t.innerHTML = '垂直との差 <span class="num">'+ tiltText(line) +'</span>';
+  if(!ls.length){
+    t.className = 'tilt none';
+    t.textContent = '線なし（「＋ 縦線」で追加）';
+  } else {
+    t.className = 'tilt';
+    t.innerHTML = '<span class="num">' + lineText(line) + '</span>';
+  }
 
-  drawPhoto(cv, s.img, s.photo, true);
-  addRenderTask(cv, s.img, s.photo, true);
+  drawPhoto(cv, s.img, s.photo, s.sel);
+  addRenderTask(cv, s.img, s.photo, s.sel);
+}
+function selLine(k){
+  var s = edit.slots[k];
+  if(!s) return null;
+  var ls = linesOf(s.photo);
+  return ls[s.sel] || null;
 }
 // ハンドル／線のドラッグ
 function attachDrag(k, canvas){
@@ -836,16 +1045,33 @@ function attachDrag(k, canvas){
   function down(e){
     var s = edit.slots[k];
     if(!s) return;
+    var ls = linesOf(s.photo);
+    if(!ls.length) return;
     var p = toNat(e);
-    var l = s.photo.line;
     var tol = HANDLE_R / p.pxPerNat;                  // 44px四方の当たり判定
-    var d1 = Math.hypot(p.x-l.x1, p.y-l.y1);
-    var d2 = Math.hypot(p.x-l.x2, p.y-l.y2);
-    if(d1 <= tol && d1 <= d2)      drag = {mode:'p1'};
-    else if(d2 <= tol)             drag = {mode:'p2'};
-    else if(distToSeg(p, l) <= Math.max(tol*0.5, 14/p.pxPerNat))
-                                   drag = {mode:'move', ox:p.x, oy:p.y, l:Object.assign({}, l)};
-    else return;
+    var bodyTol = Math.max(tol*0.5, 14/p.pxPerNat);
+    var hit = null;
+
+    // 選択中の線 → 他の線 の順に、ハンドルを優先して判定する
+    var order = [s.sel];
+    for(var i=0;i<ls.length;i++) if(i !== s.sel) order.push(i);
+    for(var oi=0; oi<order.length && !hit; oi++){
+      var idx = order[oi], l = ls[idx];
+      if(!l) continue;
+      var d1 = Math.hypot(p.x-l.x1, p.y-l.y1);
+      var d2 = Math.hypot(p.x-l.x2, p.y-l.y2);
+      if(d1 <= tol && d1 <= d2)  hit = {mode:'p1', idx:idx};
+      else if(d2 <= tol)         hit = {mode:'p2', idx:idx};
+    }
+    for(var oj=0; oj<order.length && !hit; oj++){
+      var j = order[oj];
+      if(ls[j] && distToSeg(p, ls[j]) <= bodyTol){
+        hit = {mode:'move', idx:j, ox:p.x, oy:p.y, l:Object.assign({}, ls[j])};
+      }
+    }
+    if(!hit) return;
+    if(hit.idx !== s.sel){ s.sel = hit.idx; renderSlot(k); }
+    drag = hit;
     e.preventDefault();
     if(canvas.setPointerCapture) { try{ canvas.setPointerCapture(e.pointerId); }catch(err){} }
     move(e);
@@ -854,7 +1080,8 @@ function attachDrag(k, canvas){
     if(!drag) return;
     var s = edit.slots[k];
     var p = toNat(e);
-    var l = s.photo.line;
+    var l = linesOf(s.photo)[drag.idx];
+    if(!l) return;
     var W = s.photo.w, H = s.photo.h;
     var cl = function(v, max){ return Math.max(0, Math.min(max, v)); };
     if(drag.mode === 'p1'){ l.x1 = cl(p.x, W); l.y1 = cl(p.y, H); }
@@ -869,8 +1096,9 @@ function attachDrag(k, canvas){
     e.preventDefault();
     var slot = canvas.closest('.slot');
     var t = slot.querySelector('[data-el="tilt"]');
-    t.innerHTML = '垂直との差 <span class="num">'+ tiltText(l) +'</span>';
-    drawPhoto(canvas, s.img, s.photo, true);
+    t.className = 'tilt';
+    t.innerHTML = '<span class="num">'+ lineText(l) +'</span>';
+    drawPhoto(canvas, s.img, s.photo, s.sel);
   }
   function up(){ drag = null; }
   if(window.PointerEvent){
@@ -921,8 +1149,8 @@ function saveEdit(){
     // 線を焼き込んだサムネイルを作り直す（元画像と線の座標は別々に保存）
     return makeThumb(s.img, s.photo).then(function(thumb){
       rec[k] = {
-        blob: s.photo.blob, w: s.photo.w, h: s.photo.h,
-        thumb: thumb, line: Object.assign({}, s.photo.line)
+        blob: s.photo.blob, w: s.photo.w, h: s.photo.h, thumb: thumb,
+        lines: linesOf(s.photo).map(function(l){ return Object.assign({}, l); })
       };
     });
   });
@@ -1003,7 +1231,7 @@ function recColumn(rec, isCurrent){
     var head = el('h4');
     head.appendChild(el('span', null, SLOT_LABEL[k]));
     var p = rec[k];
-    if(p && p.line) head.appendChild(el('span','tilt', tiltText(p.line)));
+    if(p) head.appendChild(el('span','tilt', linesText(p)));
     box.appendChild(head);
     var wrap = el('div','canvas-wrap');
     if(p){
@@ -1017,8 +1245,8 @@ function recColumn(rec, isCurrent){
       // iPadの共有シートは「押した瞬間」にしか開けないため、PNGを先に用意しておく
       prepareExport(rec, k, btn);
       decodeBlob(p.blob).then(function(img){
-        drawPhoto(cv, img, p, false);
-        addRenderTask(cv, img, p, false);
+        drawPhoto(cv, img, p, -1);
+        addRenderTask(cv, img, p, -1);
       }).catch(function(){ wrap.appendChild(el('div','placeholder','画像を読めませんでした')); });
     } else {
       wrap.appendChild(el('div','placeholder','写真なし'));
@@ -1048,7 +1276,7 @@ function renderPng(rec, k){
     c.width = p.w; c.height = p.h;
     var ctx = c.getContext('2d');
     ctx.drawImage(img, 0, 0, p.w, p.h);
-    if(p.line) drawLine(ctx, p.line, p.w, p.h, 1, false, 1);
+    drawLines(ctx, p, 1, 1, -1);
     return toBlobP(c, 'image/png');
   });
 }
@@ -1128,7 +1356,7 @@ function exportJson(){
       var jobs = SLOT_KEYS.map(function(k){
         if(!r[k]) { o[k] = null; return Promise.resolve(); }
         return blobToDataURL(r[k].blob).then(function(u){
-          o[k] = {image:u, w:r[k].w, h:r[k].h, line:r[k].line || null};
+          o[k] = {image:u, w:r[k].w, h:r[k].h, lines:linesOf(r[k])};
         });
       });
       return Promise.all(jobs).then(function(){ out.records.push(o); });
@@ -1178,10 +1406,11 @@ function importJson(file){
           try { blob = dataURLtoBlob(p.image); } catch(e){ return Promise.resolve(); }
           return decodeBlob(blob).then(function(img){
             var w = p.w || srcW(img), h = p.h || srcH(img);
-            var photo = {blob:blob, w:w, h:h,
-                         line: p.line || defaultLine(w,h), thumb:null};
+            var lines = Array.isArray(p.lines) ? p.lines
+                      : (p.line ? [p.line] : [defaultLine(w,h)]);   // 旧形式も受ける
+            var photo = {blob:blob, w:w, h:h, lines:lines, thumb:null};
             return makeThumb(img, photo).then(function(t){
-              rec[k] = {blob:blob, w:w, h:h, thumb:t, line:photo.line};
+              rec[k] = {blob:blob, w:w, h:h, thumb:t, lines:lines};
             });
           }).catch(function(){});
         });
@@ -1222,6 +1451,239 @@ function checkQuota(){
 }
 
 /* =========================================================
+   アプリ内カメラ（ガイド付き）
+   ========================================================= */
+var CAM_OK = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
+                location.protocol.indexOf('http') === 0);
+var cam = {stream:null, key:null, facing:'environment', guide:'center'};
+var GUIDE_LABEL = {center:'中央線', grid:'方眼', off:'なし'};
+
+function openCam(k){
+  if(!CAM_OK){ fallbackCamInput(k); return; }
+  cam.key = k;
+  var v = $('v-cam');
+  v.classList.remove('hidden');
+  v.setAttribute('aria-hidden','false');
+  startCam();
+}
+function startCam(){
+  stopStream();
+  navigator.mediaDevices.getUserMedia({
+    audio: false,
+    video: { facingMode:{ideal:cam.facing}, width:{ideal:1920}, height:{ideal:1920} }
+  }).then(function(s){
+    cam.stream = s;
+    var v = $('camVideo');
+    v.srcObject = s;
+    var p = v.play();
+    if(p && p.catch) p.catch(function(){});
+    v.onloadedmetadata = layoutGuide;
+    setTimeout(layoutGuide, 300);
+  }).catch(function(e){
+    var k = cam.key;
+    closeCam();
+    var name = e && e.name ? e.name : '';
+    if(name === 'NotAllowedError'){
+      alert('カメラの使用が許可されていません。\n端末の設定でカメラを許可するか、「画像を選択」から取り込んでください。');
+    } else {
+      alert('カメラを起動できませんでした（'+name+'）。端末標準のカメラを使います。');
+      fallbackCamInput(k);
+    }
+  });
+}
+function stopStream(){
+  if(cam.stream){
+    cam.stream.getTracks().forEach(function(t){ try{ t.stop(); }catch(e){} });
+    cam.stream = null;
+  }
+  var v = $('camVideo');
+  if(v){ try{ v.srcObject = null; }catch(e){} }
+}
+function closeCam(){
+  stopStream();
+  var v = $('v-cam');
+  v.classList.add('hidden');
+  v.setAttribute('aria-hidden','true');
+}
+function fallbackCamInput(k){
+  var slot = $('slots').querySelector('.slot[data-k="'+k+'"]');
+  if(slot) slot.querySelector('[data-el="cam"]').click();
+}
+// ガイドを映像の表示範囲にぴったり重ねる
+function layoutGuide(){
+  var v = $('camVideo'), st = $('camStage'), ov = $('camOverlay');
+  if(!v || !v.videoWidth || !st) return;
+  var sw = st.clientWidth, sh = st.clientHeight;
+  var sc = Math.min(sw/v.videoWidth, sh/v.videoHeight);
+  var w = v.videoWidth*sc, h = v.videoHeight*sc;
+  ov.style.width = w+'px';  ov.style.height = h+'px';
+  ov.style.left = ((sw-w)/2)+'px'; ov.style.top = ((sh-h)/2)+'px';
+  ov.innerHTML = guideSVG(cam.guide);
+}
+function guideSVG(mode){
+  if(mode === 'off') return '';
+  var thin = 'stroke="#ffffff" stroke-opacity="0.85" stroke-width="1" vector-effect="non-scaling-stroke" stroke-dasharray="6 5"';
+  var s = '<svg viewBox="0 0 100 100" preserveAspectRatio="none">';
+  if(mode === 'grid'){
+    [100/3, 200/3].forEach(function(p){
+      s += '<line x1="'+p+'" y1="0" x2="'+p+'" y2="100" '+thin+'/>';
+      s += '<line x1="0" y1="'+p+'" x2="100" y2="'+p+'" '+thin+'/>';
+    });
+  } else {
+    [25,50,75].forEach(function(p){
+      s += '<line x1="0" y1="'+p+'" x2="100" y2="'+p+'" '+thin+'/>';
+    });
+  }
+  s += '<line x1="50" y1="0" x2="50" y2="100" stroke="#ff2a2a" stroke-width="2" vector-effect="non-scaling-stroke"/>';
+  s += '<rect x="0" y="0" width="100" height="100" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2" vector-effect="non-scaling-stroke"/>';
+  return s + '</svg>';
+}
+function shoot(){
+  var v = $('camVideo');
+  // 映像が小さすぎる＝まだ準備できていない／途切れた。壊れた写真を保存しない
+  if(!v || v.videoWidth < 240 || v.videoHeight < 240){
+    toast('カメラの準備中です。少し待ってからもう一度押してください');
+    return;
+  }
+  var c = document.createElement('canvas');
+  c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);   // ガイドは写し込まない
+  var k = cam.key;
+  toBlobP(c, 'image/jpeg', 0.92).then(function(blob){
+    closeCam();
+    return applyPhoto(k, blob);
+  }).catch(function(e){
+    closeCam();
+    alert('撮影できませんでした：' + (e && e.message ? e.message : e));
+  });
+}
+
+/* =========================================================
+   印刷
+   ========================================================= */
+var printURLs = [];
+function printTargets(){
+  var rec = findRec(detailId);
+  if(!rec) return [];
+  var cmp = compareId ? findRec(compareId) : null;
+  return cmp ? [cmp, rec] : [rec];
+}
+function openPrintPanel(){
+  var recs = printTargets();
+  if(!recs.length) return;
+  $('ppSub').textContent = recs.length > 1
+    ? '比較中のため、' + fmtDate(recs[0].date) + ' と ' + fmtDate(recs[1].date) + ' の2時点を並べて印刷します。'
+    : fmtDate(recs[0].date) + ' の正面・側面を印刷します。';
+  var p = $('printPanel');
+  p.hidden = !p.hidden;
+}
+function clearPrintArea(){
+  $('printArea').textContent = '';
+  printURLs.forEach(function(u){ URL.revokeObjectURL(u); });
+  printURLs = [];
+}
+function imgFor(rec, k){
+  return renderPng(rec, k).then(function(blob){
+    return new Promise(function(res, rej){
+      var u = URL.createObjectURL(blob);
+      printURLs.push(u);
+      var img = new Image();
+      img.onload = function(){ res(img); };
+      img.onerror = function(){ rej(new Error('画像を準備できませんでした')); };
+      img.src = u;
+    });
+  });
+}
+function printCell(rec, k, img, withDate){
+  var d = el('div','p-cell');
+  d.appendChild(img);
+  var cap = el('div','p-cap');
+  cap.appendChild(el('b', null, SLOT_LABEL[k]));
+  cap.appendChild(el('span', null, '　' + linesText(rec[k])));
+  if(withDate){ cap.appendChild(el('br')); cap.appendChild(el('span', null, fmtDate(rec.date))); }
+  d.appendChild(cap);
+  return d;
+}
+function doPrint(layout){
+  var recs = printTargets();
+  if(!recs.length) return;
+  var multi = recs.length > 1;
+  var cur = recs[recs.length-1];
+  clearPrintArea();
+  $('printPanel').hidden = true;
+  toast('印刷の準備中…');
+
+  var jobs = [];
+  recs.forEach(function(r){
+    SLOT_KEYS.forEach(function(k){
+      jobs.push(r[k] ? imgFor(r, k).then(function(img){ return {r:r, k:k, img:img}; })
+                     : Promise.resolve(null));
+    });
+  });
+  Promise.all(jobs).then(function(items){
+    var got = {};
+    items.forEach(function(it){ if(it) got[it.r.id+'|'+it.k] = it.img; });
+    var area = $('printArea');
+    var sub = '撮影日 ' + (multi ? recs.map(function(r){ return fmtDate(r.date); }).join(' → ')
+                                 : fmtDate(cur.date));
+    function head(extra){
+      var h = el('div','p-head');
+      h.appendChild(el('div','p-name', cur.name + ' 様'));
+      h.appendChild(el('div','p-sub', extra ? sub + '／' + extra : sub));
+      return h;
+    }
+    function foot(){ return el('div','p-foot', '印刷日 ' + fmtDate(todayStr()) + '　姿勢写真記録'); }
+    function rowFor(k, cls){
+      var row = el('div','p-row '+cls), n = 0;
+      recs.forEach(function(r){
+        var img = got[r.id+'|'+k];
+        if(!img) return;
+        n++;
+        row.appendChild(printCell(r, k, img, multi));
+      });
+      return n ? row : null;
+    }
+
+    if(layout === 'duplex'){
+      SLOT_KEYS.forEach(function(k){
+        var row = rowFor(k, multi ? 'p-img-lg' : 'p-img-xl');
+        if(!row) return;
+        var page = el('div','p-page');
+        page.appendChild(head(SLOT_LABEL[k]));
+        page.appendChild(row);
+        if(k === 'side' && cur.memo && cur.memo.trim()) page.appendChild(el('div','p-memo', cur.memo));
+        page.appendChild(foot());
+        area.appendChild(page);
+      });
+    } else {
+      var page = el('div','p-page');
+      page.appendChild(head(''));
+      if(multi){
+        SLOT_KEYS.forEach(function(k){
+          var row = rowFor(k, 'p-img-sm');
+          if(row) page.appendChild(row);
+        });
+      } else {
+        var row = el('div','p-row p-img-md');
+        SLOT_KEYS.forEach(function(k){
+          var img = got[cur.id+'|'+k];
+          if(img) row.appendChild(printCell(cur, k, img, false));
+        });
+        page.appendChild(row);
+      }
+      if(cur.memo && cur.memo.trim()) page.appendChild(el('div','p-memo', cur.memo));
+      page.appendChild(foot());
+      area.appendChild(page);
+    }
+    if(!area.childNodes.length){ alert('印刷できる写真がありません。'); return; }
+    setTimeout(function(){ window.print(); }, 150);
+  }).catch(function(e){
+    alert('印刷の準備に失敗しました：' + (e && e.message ? e.message : e));
+  });
+}
+window.addEventListener('afterprint', clearPrintArea);
+
+/* =========================================================
    起動
    ========================================================= */
 function reload(){
@@ -1249,8 +1711,32 @@ $('dEdit').addEventListener('click', function(){
   if(rec) openEdit(rec);
 });
 $('dDel').addEventListener('click', delDetail);
+$('dPrint').addEventListener('click', openPrintPanel);
+$('printPanel').addEventListener('click', function(e){
+  var b = e.target.closest ? e.target.closest('button') : null;
+  if(!b) return;
+  if(b.dataset.act === 'close'){ $('printPanel').hidden = true; return; }
+  if(b.dataset.layout) doPrint(b.dataset.layout);
+});
+$('camCancel').addEventListener('click', closeCam);
+$('camShot').addEventListener('click', shoot);
+$('camSwitch').addEventListener('click', function(){
+  cam.facing = (cam.facing === 'environment') ? 'user' : 'environment';
+  startCam();
+});
+$('camGuide').addEventListener('click', function(){
+  cam.guide = cam.guide === 'center' ? 'grid' : (cam.guide === 'grid' ? 'off' : 'center');
+  $('camGuide').textContent = 'ガイド：' + GUIDE_LABEL[cam.guide];
+  layoutGuide();
+});
+window.addEventListener('resize', layoutGuide);
+window.addEventListener('orientationchange', function(){ setTimeout(layoutGuide, 350); });
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden && cam.stream) closeCam();   // 裏に回ったらカメラを止める
+});
 $('dCmp').addEventListener('change', function(e){
   compareId = e.target.value;
+  $('printPanel').hidden = true;
   renderDetail();
 });
 $('btnExport').addEventListener('click', exportJson);
