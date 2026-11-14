@@ -229,11 +229,32 @@ label.field textarea{min-height:88px;resize:vertical}
 .shutter:active{background:#bbb}
 .cam-note{grid-column:1/-1;text-align:center;font-size:.8rem;color:#bbb;margin-top:2px;white-space:nowrap}
 
+/* ---------- 印刷プレビュー ---------- */
+#v-print{
+  position:fixed;inset:0;z-index:55;background:#f2f4f7;
+  display:flex;flex-direction:column;
+}
+#v-print.hidden{display:none}
+.pv-bar{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  padding-top:max(10px, env(safe-area-inset-top));
+  background:#fff;border-bottom:2px solid var(--fg);flex:0 0 auto;
+}
+.pv-body{flex:1;min-height:0;overflow:auto;padding:12px;-webkit-overflow-scrolling:touch}
+.pv-page{margin:0 auto 14px;max-width:820px}
+.pv-cap{font-size:.82rem;color:var(--fg-sub);margin-bottom:4px}
+.pv-page img{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--line);box-shadow:0 1px 6px rgba(0,0,0,.15)}
+.pv-note{
+  flex:0 0 auto;margin:0;padding:10px 14px;
+  padding-bottom:max(10px, env(safe-area-inset-bottom));
+  background:#fff;border-top:1px solid var(--line);font-size:.84rem;color:var(--fg-sub);
+}
+
 /* ---------- 印刷 ---------- */
 #printArea{display:none}
 @media print{
   body{padding:0;background:#fff}
-  .view,#toast,.notice,#v-cam{display:none !important}
+  .view,#toast,.notice,#v-cam,#v-print{display:none !important}
   #printArea{display:block}
   @page{size:A4 portrait;margin:12mm}
   .p-page{page-break-after:always;break-after:page}
@@ -356,6 +377,20 @@ label.field textarea{min-height:88px;resize:vertical}
     </div>
     <div class="cam-note" id="camNote">ガイド線は写真には写りません</div>
   </div>
+</section>
+
+<!-- ======================= 印刷プレビュー（iPad） ======================= -->
+<section id="v-print" class="hidden" aria-hidden="true">
+  <div class="pv-bar">
+    <button id="pvClose" class="btn sm">閉じる</button>
+    <span class="grow" style="font-weight:700">印刷プレビュー</span>
+    <button id="pvShare" class="btn sm primary">プリント・共有</button>
+  </div>
+  <div class="pv-body" id="pvBody"></div>
+  <p class="pv-note">
+    「プリント・共有」を押すと共有メニューが開きます。そこから「プリント」を選ぶと印刷できます。
+    うまくいかないときは、上の画像を長押しして「”写真”に保存」し、写真アプリから印刷してください。
+  </p>
 </section>
 
 <div id="printArea" aria-hidden="true"></div>
@@ -1587,11 +1622,14 @@ function wrapText(ctx, text, maxW){
   if(line) out.push(line);
   return out;
 }
-function newPrintPage(name, sub, extra, landscape){
+function newPrintPage(name, sub, extra, landscape, scale){
+  scale = scale || 1;
   var W = landscape ? PAGE_H : PAGE_W, H = landscape ? PAGE_W : PAGE_H;
   var c = document.createElement('canvas');
-  c.width = W; c.height = H;
+  c.width = Math.round(W*scale); c.height = Math.round(H*scale);
   var x = c.getContext('2d');
+  // 描画は常に1240×1754の座標で行い、canvasの実寸だけを縮める（メモリ対策）
+  if(scale !== 1) x.setTransform(scale, 0, 0, scale, 0, 0);
   x.fillStyle = '#fff'; x.fillRect(0,0,W,H);
   x.fillStyle = '#000'; x.textBaseline = 'alphabetic'; x.textAlign = 'left';
   x.font = 'bold 36px ' + PFONT;
@@ -1602,7 +1640,7 @@ function newPrintPage(name, sub, extra, landscape){
   x.fillText(head, W - PAGE_M, PAGE_M + 30);
   x.textAlign = 'left';
   x.fillRect(PAGE_M, PAGE_M + 48, W - 2*PAGE_M, 2);
-  return {canvas:c, ctx:x, top: PAGE_M + 74, W:W, H:H};
+  return {canvas:c, ctx:x, top: PAGE_M + 74, W:W, H:H, scale:scale, probes: []};
 }
 // rows: [[{img, lines:[...]} ...] ...]
 function drawPrintRows(pg, rows, memoText){
@@ -1654,6 +1692,7 @@ function drawPrintRows(pg, rows, memoText){
       var sc = Math.min(cellW/iw, imgH/ih);
       var w = iw*sc, h = ih*sc;
       x.drawImage(im, cx + (cellW-w)/2, y + (imgH-h)/2, w, h);
+      pg.probes.push([cx + cellW/2, y + imgH/2]);   // 白紙チェック用
       var ty = y + imgH + 26;
       x.textAlign = 'center';
       cell.lines.forEach(function(ln, li){
@@ -1683,6 +1722,29 @@ function canvasJPEG(canvas){
     });
   });
 }
+// iPadはcanvasの使用量が上限を超えると中身を捨てて真っ白になる。
+// 白紙のまま印刷してしまわないよう、見出しの罫線と各写真の中心を見て確かめる
+function pageLooksBlank(pg){
+  var ctx = pg.ctx;
+  var s = pg.scale || 1;
+  function isWhite(x, y){      // x,y は論理座標。getImageDataは実ピクセルで見る
+    var px = Math.max(0, Math.min(pg.canvas.width - 16, Math.round(x*s) - 8));
+    var py = Math.max(0, Math.min(pg.canvas.height - 16, Math.round(y*s) - 8));
+    var d;
+    try { d = ctx.getImageData(px, py, 16, 16).data; } catch(e){ return false; }
+    for(var i=0;i<d.length;i+=4){
+      if(d[i] < 245 || d[i+1] < 245 || d[i+2] < 245) return false;
+    }
+    return true;
+  }
+  if(!isWhite(PAGE_M + 40, PAGE_M + 49)) return false;      // 見出しの下の黒い罫線
+  var probes = pg.probes || [];
+  for(var i=0;i<probes.length;i++){
+    if(!isWhite(probes[i][0], probes[i][1])) return false;   // 写真が描けている
+  }
+  return true;
+}
+function releaseCanvas(c){ try { c.width = 1; c.height = 1; } catch(e){} }
 // JPEG1枚＝1ページの最小構成のPDFを組み立てる
 function buildPDF(pages){
   var enc = new TextEncoder();
@@ -1749,11 +1811,10 @@ function openPrintPanel(){
     ? '比較中のため、' + fmtDate(recs[0].date) + ' と ' + fmtDate(recs[1].date) + ' の2時点を並べます。'
     : fmtDate(recs[0].date) + ' の正面・側面を印刷します。';
   $('ppSub').textContent = what + (PRINT_VIA_SHARE
-    ? '　選ぶと印刷用PDFができ、共有メニューが開きます。そこから「プリント」を選んでください。'
+    ? '　選ぶと印刷用PDFを作り、プレビューを表示します。'
     : '');
   var p = $('printPanel');
   p.hidden = !p.hidden;
-  if(!p.hidden) prebuildPDFs();
 }
 function clearPrintArea(){
   $('printArea').textContent = '';
@@ -1861,76 +1922,128 @@ function renderPrintDOM(plan){
   });
 }
 // 印刷用PDFを作る（iPad用）
-function makePDF(plan){
-  var canvases = plan.pages.map(function(pg){
-    // 2枚を横に並べるページは用紙を横向きにして写真を大きく出す
-    var landscape = pg.rows.length === 1 && pg.rows[0].length === 2;
-    var p = newPrintPage(plan.name, plan.sub, pg.extra, landscape);
-    drawPrintRows(p, pg.rows, pg.memo);
-    return p.canvas;
-  });
-  return Promise.all(canvases.map(canvasJPEG)).then(buildPDF);
-}
-// 共有シートは「押した瞬間」しか開けないので、パネルを出した時点で作っておく
-var pdfCache = {};
-function prebuildPDFs(){
-  if(!PRINT_VIA_SHARE) return;
-  var recs = printTargets();
-  if(!recs.length) return;
-  pdfCache = {};
-  clearPrintArea();
-  collectPrintImages(recs).then(function(got){
-    ['duplex','single'].forEach(function(lay){
-      var plan = printPlan(lay, recs, got);
-      if(!plan.pages.length) return;
-      makePDF(plan).then(function(blob){
-        try { pdfCache[lay] = new File([blob], pdfName(plan), {type:'application/pdf'}); }
-        catch(e){ pdfCache[lay] = {blob:blob, name:pdfName(plan)}; }
-      }).catch(function(){});
+// iPadのメモリ対策として、1ページずつ作って、JPEGにしたらすぐcanvasを解放する
+function makePDF(plan, scale){
+  var jpegs = [];
+  var chain = Promise.resolve();
+  plan.pages.forEach(function(pg){
+    chain = chain.then(function(){
+      // 2枚を横に並べるページは用紙を横向きにして写真を大きく出す
+      var landscape = pg.rows.length === 1 && pg.rows[0].length === 2;
+      var p = newPrintPage(plan.name, plan.sub, pg.extra, landscape, scale);
+      drawPrintRows(p, pg.rows, pg.memo);
+      if(pageLooksBlank(p)){
+        releaseCanvas(p.canvas);
+        throw new Error('BLANK_PAGE');
+      }
+      return canvasJPEG(p.canvas).then(function(j){
+        releaseCanvas(p.canvas);
+        jpegs.push(j);
+      });
     });
-  }).catch(function(){});
+  });
+  return chain.then(function(){
+    return {blob: buildPDF(jpegs), jpegs: jpegs};
+  });
 }
+/* ---------- 印刷プレビュー（iPad） ---------- */
+var pvFile = null, pvBlob = null, pvName = '', pvURLs = [];
+function clearPreview(){
+  pvURLs.forEach(function(u){ URL.revokeObjectURL(u); });
+  pvURLs = [];
+  $('pvBody').textContent = '';
+  pvFile = null; pvBlob = null; pvName = '';
+}
+function closePreview(){
+  clearPreview();
+  var v = $('v-print');
+  v.classList.add('hidden');
+  v.setAttribute('aria-hidden','true');
+  if(detailId && !$('v-detail').classList.contains('hidden')) renderDetail();
+}
+// PDFを作る間、詳細画面のcanvasを解放しておく（iPadのメモリ対策）
+function releaseDetailCanvases(){
+  var cvs = $('dPairs').querySelectorAll('canvas');
+  for(var i=0;i<cvs.length;i++) releaseCanvas(cvs[i]);
+  renderTasks = [];
+}
+function openPreview(){
+  var v = $('v-print');
+  v.classList.remove('hidden');
+  v.setAttribute('aria-hidden','false');
+  window.scrollTo(0,0);
+}
+function showPreview(plan, result){
+  clearPreview();
+  pvBlob = result.blob;
+  pvName = pdfName(plan);
+  try { pvFile = new File([pvBlob], pvName, {type:'application/pdf'}); } catch(e){ pvFile = null; }
+  var body = $('pvBody');
+  result.jpegs.forEach(function(j, i){
+    var u = URL.createObjectURL(new Blob([j.bytes], {type:'image/jpeg'}));
+    pvURLs.push(u);
+    var wrap = el('div','pv-page');
+    var cap = el('div','pv-cap', (i+1) + 'ページ目' + (j.w > j.h ? '（A4横）' : '（A4縦）'));
+    var img = el('img');
+    img.src = u; img.alt = (i+1)+'ページ目';
+    wrap.appendChild(cap); wrap.appendChild(img);
+    body.appendChild(wrap);
+  });
+  $('pvShare').textContent = SHARE_OK ? 'プリント・共有' : 'PDFを保存';
+  openPreview();
+}
+function sharePreview(){
+  if(!pvBlob) return;
+  if(pvFile && navigator.canShare && navigator.canShare({files:[pvFile]})){
+    navigator.share({files:[pvFile]}).catch(function(e){
+      if(e && e.name === 'AbortError') return;
+      download(pvBlob, pvName);
+      toast('PDFを保存しました');
+    });
+    return;
+  }
+  download(pvBlob, pvName);
+  toast('PDFを保存しました');
+}
+
 function doPrint(layout){
   var recs = printTargets();
   if(!recs.length) return;
   $('printPanel').hidden = true;
+  clearPrintArea();
 
-  // iPad：用意しておいたPDFを共有シートへ（「プリント」を選べる）
+  // iPad：PDFを作ってからプレビューを出し、そこから共有シート（プリント）へ。
+  // 共有は「押した瞬間」しか開けないので、出来上がってから押してもらう
   if(PRINT_VIA_SHARE){
-    var f = pdfCache[layout];
-    if(f && f.name && f.size != null){
-      navigator.share({files:[f]}).catch(function(e){
-        if(e && e.name === 'AbortError') return;
-        download(f, f.name);
-        toast('PDFを保存しました');
-      });
-      return;
-    }
-    toast('印刷用PDFを準備中…');
-    clearPrintArea();
+    toast('印刷用PDFを作成中…');
+    releaseDetailCanvases();
     collectPrintImages(recs).then(function(got){
       var plan = printPlan(layout, recs, got);
       if(!plan.pages.length){ alert('印刷できる写真がありません。'); return; }
-      return makePDF(plan).then(function(blob){
-        var file;
-        try { file = new File([blob], pdfName(plan), {type:'application/pdf'}); } catch(e){}
-        if(file && navigator.canShare && navigator.canShare({files:[file]})){
-          return navigator.share({files:[file]}).catch(function(e){
-            if(e && e.name === 'AbortError') return;
-            download(blob, pdfName(plan)); toast('PDFを保存しました');
-          });
-        }
-        download(blob, pdfName(plan));
-        toast('PDFを保存しました');
+      return makePDF(plan).then(function(result){
+        showPreview(plan, result);
+      }, function(e){
+        // メモリ不足で真っ白になったときは、解像度を落として作り直す
+        if(!e || e.message !== 'BLANK_PAGE') throw e;
+        toast('解像度を下げて作り直しています…');
+        return makePDF(plan, 0.7).then(function(result){
+          showPreview(plan, result);
+          toast('メモリ節約のため、少し粗い画質で作成しました');
+        });
       });
     }).catch(function(e){
-      alert('印刷用PDFを作れませんでした：' + (e && e.message ? e.message : e));
+      if(detailId) renderDetail();
+      if(e && e.message === 'BLANK_PAGE'){
+        alert('端末のメモリが足りず、印刷用のページを作れませんでした。\n' +
+              'アプリを一度閉じてから開き直して、もう一度お試しください。');
+      } else {
+        alert('印刷用PDFを作れませんでした：' + (e && e.message ? e.message : e));
+      }
     });
     return;
   }
 
   // PC・Mac：ブラウザの印刷
-  clearPrintArea();
   toast('印刷の準備中…');
   collectPrintImages(recs).then(function(got){
     var plan = printPlan(layout, recs, got);
@@ -1978,6 +2091,8 @@ $('printPanel').addEventListener('click', function(e){
   if(b.dataset.act === 'close'){ $('printPanel').hidden = true; return; }
   if(b.dataset.layout) doPrint(b.dataset.layout);
 });
+$('pvClose').addEventListener('click', closePreview);
+$('pvShare').addEventListener('click', sharePreview);
 $('camCancel').addEventListener('click', closeCam);
 $('camShot').addEventListener('click', shoot);
 $('camSwitch').addEventListener('click', function(){
