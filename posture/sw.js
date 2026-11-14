@@ -1,12 +1,20 @@
 /* 姿勢写真記録 — オフライン用キャッシュ
    記録データ（写真・線・氏名）はここでは一切扱わない。IndexedDB に残り、外部へは出ない。 */
-var CACHE = 'posture-v4';
+var CACHE = 'posture-v5';
 var ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-512.png'];
 
 self.addEventListener('install', function(e){
   e.waitUntil(
     caches.open(CACHE)
-      .then(function(c){ return c.addAll(ASSETS); })
+      // ブラウザのHTTPキャッシュを無視して取り直す。
+      // addAll だと古い index.html を拾い、更新しても1回目の起動が旧版になる。
+      .then(function(c){
+        return Promise.all(ASSETS.map(function(u){
+          return fetch(new Request(u, {cache: 'reload'}))
+            .then(function(res){ return (res && res.ok) ? c.put(u, res) : null; })
+            .catch(function(){ return c.add(u).catch(function(){}); });
+        }));
+      })
       .then(function(){ return self.skipWaiting(); })
   );
 });
