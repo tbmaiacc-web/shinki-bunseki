@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<title>姿勢写真記録 取扱説明書</title>
+<style>
+:root{
+  --fg:#111;
+  --fg-sub:#555;
+  --line:#c9ced6;
+  --bg:#fff;
+  --bg-sub:#f2f4f7;
+  --accent:#0b57d0;
+  --danger:#b3261e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",Meiryo,sans-serif;
+  color:var(--fg);background:var(--bg);
+  font-size:17px;line-height:1.7;
+  -webkit-text-size-adjust:100%;
+}
+.wrap{max-width:820px;margin:0 auto;padding:0 16px 80px}
+
+header{border-bottom:3px solid var(--fg);padding:22px 0 16px;margin-bottom:8px}
+header h1{margin:0;font-size:1.6rem;line-height:1.3}
+header .sub{color:var(--fg-sub);font-size:.95rem;margin-top:6px}
+
+nav{background:var(--bg-sub);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin:20px 0 28px}
+nav h2{font-size:1rem;margin:0 0 8px}
+nav ol{margin:0;padding-left:1.3em}
+nav li{margin:3px 0}
+nav a{color:var(--accent)}
+
+h2{font-size:1.25rem;margin:40px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--fg)}
+h3{font-size:1.05rem;margin:26px 0 8px}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:1.5em}
+li{margin:6px 0}
+
+.step{counter-reset:none;list-style:none;padding:0;margin:14px 0}
+.step>li{
+  position:relative;padding:12px 14px 12px 52px;margin:10px 0;
+  border:1px solid var(--line);border-radius:10px;background:#fff;
+}
+.step>li::before{
+  content:counter(s);counter-increment:s;
+  position:absolute;left:12px;top:12px;
+  width:28px;height:28px;border-radius:50%;
+  background:var(--fg);color:#fff;
+  font-weight:700;font-size:15px;line-height:28px;text-align:center;
+}
+.step{counter-reset:s}
+
+.key{
+  display:inline-block;border:1.5px solid var(--fg);border-radius:6px;
+  padding:1px 8px;font-size:.92em;font-weight:700;white-space:nowrap;
+  background:#fff;
+}
+.key.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.key.dan{background:var(--danger);border-color:var(--danger);color:#fff}
+
+.note{border-left:5px solid var(--accent);background:var(--bg-sub);padding:12px 16px;margin:16px 0;border-radius:0 8px 8px 0}
+.warn{border-left:5px solid var(--danger);background:#fdf0ef;padding:12px 16px;margin:16px 0;border-radius:0 8px 8px 0}
+.note p:first-child,.warn p:first-child{margin-top:0}
+.note p:last-child,.warn p:last-child{margin-bottom:0}
+.note strong,.warn strong{font-weight:700}
+
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.97rem;table-layout:fixed}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top;overflow-wrap:anywhere}
+th{background:var(--bg-sub);font-weight:700;width:34%}
+
+.url{
+  display:block;background:var(--bg-sub);border:1px solid var(--line);border-radius:8px;
+  padding:12px 14px;margin:12px 0;font-size:.95rem;word-break:break-all;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+footer{margin-top:56px;padding-top:16px;border-top:1px solid var(--line);color:var(--fg-sub);font-size:.9rem}
+.toplink{font-size:.9rem;color:var(--accent);text-decoration:none}
+
+@media print{
+  body{font-size:11pt;line-height:1.55}
+  .wrap{max-width:none;padding:0}
+  nav{break-inside:avoid}
+  h2{break-after:avoid;margin-top:22px}
+  h3{break-after:avoid}
+  .step>li,table,.note,.warn{break-inside:avoid}
+  .toplink{display:none}
+  a{color:inherit;text-decoration:none}
+  @page{size:A4 portrait;margin:16mm}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>姿勢写真記録　取扱説明書</h1>
+  <div class="sub">iPad・iPhone・PC 対応／写真は端末内にのみ保存されます</div>
+</header>
+
+<nav>
+  <h2>もくじ</h2>
+  <ol>
+    <li><a href="#about">このアプリについて</a></li>
+    <li><a href="#setup">導入手順（iPadへの追加）</a></li>
+    <li><a href="#flow">記録する（基本の流れ）</a></li>
+    <li><a href="#camera">写真を撮る</a></li>
+    <li><a href="#line">線を引く・調整する</a></li>
+    <li><a href="#list">探す・見る・比べる</a></li>
+    <li><a href="#print">印刷する</a></li>
+    <li><a href="#backup">バックアップと端末移行</a></li>
+    <li><a href="#update">アプリの更新</a></li>
+    <li><a href="#trouble">困ったときは</a></li>
+  </ol>
+</nav>
+
+<h2 id="about">1. このアプリについて</h2>
+
+<p>来院者の姿勢写真（正面・側面）を撮影し、基準線を引いて記録・比較・印刷するためのアプリです。</p>
+
+<h3>できること</h3>
+<ul>
+  <li>正面・側面の写真を撮影または選択して、氏名・撮影日とともに保存する</li>
+  <li>写真の上に基準線を引き、垂直・水平からの傾きを角度で表示する</li>
+  <li>同じ方の過去の記録を呼び出して、2時点を並べて比較する</li>
+  <li>線を入れた状態で写真を書き出す、紙に印刷する</li>
+</ul>
+
+<h3>しないこと</h3>
+<ul>
+  <li>姿勢の良し悪しの自動判定や診断的な表示は行いません（整体院は医療機関ではないため）</li>
+  <li>クラウド保存・外部送信は一切行いません。写真は端末の中だけに保存されます</li>
+  <li>アカウント登録・ログインはありません</li>
+</ul>
+
+<div class="note">
+  <p><strong>記録は端末ごとに別々です。</strong>A院のiPadで撮った記録は、B院のiPadには表示されません。端末をまたいで移したいときは「<a href="#backup">8. バックアップと端末移行</a>」の手順で移してください。</p>
+</div>
+
+<h2 id="setup">2. 導入手順（iPadへの追加）</h2>
+
+<p>各iPadで1回だけ、次の手順を行ってください。</p>
+
+<span class="url">https://tbmaiacc-web.github.io/shinki-bunseki/posture/</span>
+
+<ol class="step">
+  <li><strong>Safariで上のURLを開く</strong><br>
+      Safari以外のブラウザでは正しく動かないことがあります。必ずSafariを使ってください。</li>
+  <li><strong>画面上部の共有ボタン（□に↑のマーク）を押す</strong></li>
+  <li><strong>メニューから「ホーム画面に追加」を選ぶ</strong><br>
+      名前は「姿勢記録」のままで構いません。右上の「追加」を押します。</li>
+  <li><strong>以後はホーム画面のアイコンから起動する</strong><br>
+      アイコンから開くと全画面のアプリとして動き、電波がなくても使えます。</li>
+</ol>
+
+<div class="warn">
+  <p><strong>ホーム画面への追加は必須です。</strong>Safariのタブで開いたまま使っていると、7日間そのサイトを開かなかった時点で、iPadが保存データを自動的に削除します（iOSの仕様）。消えた記録は復旧できません。</p>
+  <p>ホーム画面に追加したアプリは、この削除の対象外になります。</p>
+</div>
+
+<h2 id="flow">3. 記録する（基本の流れ）</h2>
+
+<ol class="step">
+  <li><strong>一覧画面の右上 <span class="key pri">＋ 新規</span> を押す</strong></li>
+  <li><strong>氏名を入力する</strong><br>
+      必須項目です。同じ氏名で登録すると、一覧で自動的にまとめられ、経過を追えるようになります。表記を揃えてください。</li>
+  <li><strong>撮影日を確認する</strong><br>
+      初期値は今日の日付です。後日まとめて入力する場合はここを変更します。</li>
+  <li><strong>メモを入力する（任意）</strong><br>
+      主訴や施術内容など。改行して複数行書けます。</li>
+  <li><strong>正面・側面の写真を用意する</strong><br>
+      <span class="key">カメラで撮影</span> または <span class="key">画像を選択</span> を押します。詳しくは「<a href="#camera">4. 写真を撮る</a>」へ。</li>
+  <li><strong>線を調整する</strong><br>
+      写真を取り込むと中央に赤い縦線が1本入ります。詳しくは「<a href="#line">5. 線を引く・調整する</a>」へ。</li>
+  <li><strong>右上または一番下の <span class="key pri">保存</span> を押す</strong><br>
+      保存すると、その記録の詳細画面が開きます。</li>
+</ol>
+
+<div class="note">
+  <p>写真は正面・側面のどちらか片方だけでも保存できます。後から <span class="key">編集</span> で追加できます。</p>
+</div>
+
+<h2 id="camera">4. 写真を撮る</h2>
+
+<h3>アプリ内カメラで撮る</h3>
+<p><span class="key">カメラで撮影</span> を押すと、ガイド付きのカメラが開きます。</p>
+
+<table>
+  <tr><th>中央の丸ボタン</th><td>撮影します</td></tr>
+  <tr><th><span class="key">ガイド：中央線</span></th><td>押すたびに <strong>中央線 → 方眼 → なし</strong> と切り替わります</td></tr>
+  <tr><th><span class="key">カメラ切替</span></th><td>背面カメラと前面カメラを切り替えます</td></tr>
+  <tr><th><span class="key">キャンセル</span></th><td>撮影せずに戻ります</td></tr>
+</table>
+
+<p><strong>ガイド線は写真には写りません。</strong>立ち位置合わせのための目安です。</p>
+
+<div class="note">
+  <p>毎回同じ条件で撮ると比較しやすくなります。カメラの高さ・立ち位置・背景を院内で決めておき、ガイドの中央線に体の中心を合わせて撮影してください。</p>
+</div>
+
+<h3>保存済みの画像を使う</h3>
+<p><span class="key">画像を選択</span> を押すと、写真アプリやファイルから選べます。すでに撮ってある写真を取り込むときに使います。</p>
+
+<h3>撮り直す・消す</h3>
+<p>写真が入っている状態では、ボタンの表示が <span class="key">撮り直す</span> <span class="key">別の画像を選択</span> に変わります。<span class="key dan">写真を削除</span> でその写真だけを消せます。</p>
+
+<h2 id="line">5. 線を引く・調整する</h2>
+
+<p>写真を取り込むと、中央に赤い縦線が1本自動で入ります。この線は写真とは別に保存されるので、後からいつでも引き直せます。</p>
+
+<h3>動かす</h3>
+<ul>
+  <li><strong>両端の丸いハンドルをドラッグ</strong>… 位置と角度を変えます</li>
+  <li><strong>線の上をドラッグ</strong>… 線全体を平行移動します</li>
+</ul>
+<p>線は端まで自動で延長されるので、ハンドルの外側も目安として使えます。</p>
+
+<h3>線を増やす</h3>
+<p>写真の上にあるボタンで操作します。<strong>線は1枚につき4本まで</strong>です。</p>
+<table>
+  <tr><th><span class="key">＋ 縦線</span></th><td>中央に垂直な線を追加します（体の中心軸など）</td></tr>
+  <tr><th><span class="key">＋ 横線</span></th><td>中央に水平な線を追加します（肩の高さ、骨盤の傾きなど）</td></tr>
+  <tr><th>線1（縦）などのボタン</th><td>押すと、その線が操作対象になります</td></tr>
+</table>
+<div class="note">
+  <p>線が複数あるときは、<strong>動かしたい線をタップで選んでから</strong>ドラッグしてください。選択中の線だけが操作対象になります。</p>
+</div>
+
+<h3>見た目を変える</h3>
+<table>
+  <tr><th>色</th><td>赤・黄・白の3色。写真が暗いときは白や黄が見やすくなります</td></tr>
+  <tr><th>太さ</th><td><span class="key">細</span> と <span class="key">太</span> の2段階</td></tr>
+  <tr><th><span class="key">位置を戻す</span></th><td>選択中の線を初期位置（中央）に戻します</td></tr>
+  <tr><th><span class="key dan">この線を消す</span></th><td>選択中の線だけを削除します</td></tr>
+</table>
+
+<h3>角度の読み方</h3>
+<p>写真の右上に、選択中の線の傾きが表示されます。</p>
+<table>
+  <tr><th>縦線</th><td>垂直からの傾き。<strong>「上が右」</strong>＝線の上端が右に傾いている、<strong>「上が左」</strong>＝左に傾いている</td></tr>
+  <tr><th>横線</th><td>水平からの傾き。<strong>「右が下がる」「右が上がる」</strong>で向きを表します</td></tr>
+</table>
+<p>いずれも <strong>0.0°</strong> がまっすぐな状態です。</p>
+
+<div class="warn">
+  <p>表示されるのは<strong>線の傾きの数値だけ</strong>です。姿勢の良し悪しを判定するものではありません。説明の際は、数値そのものではなく、前回との変化を示す材料としてお使いください。</p>
+</div>
+
+<h2 id="list">6. 探す・見る・比べる</h2>
+
+<h3>一覧画面</h3>
+<ul>
+  <li>記録は<strong>撮影日の新しい順</strong>に並びます</li>
+  <li><strong>同じ氏名の記録はまとめて1行</strong>で表示され、右の数字が件数です。行を押すと過去の記録が日付順に開きます</li>
+  <li>上部の検索欄に氏名の一部を入力すると、入力するそばから絞り込まれます</li>
+</ul>
+
+<h3>詳細画面</h3>
+<p>記録を押すと、正面・側面が並んで表示されます。iPadを横向きにすると横並び、縦向きにすると縦並びになります。</p>
+
+<h3>過去と比較する</h3>
+<ol class="step">
+  <li><strong>詳細画面の「過去の記録と比較」から日付を選ぶ</strong><br>
+      同じ氏名の記録だけが候補に出ます。</li>
+  <li><strong>左に過去、右に今回が並ぶ</strong><br>
+      それぞれの写真の下に撮影日と角度が出るので、変化を見比べられます。</li>
+</ol>
+
+<h3>写真を書き出す</h3>
+<p>各写真の下の <span class="key">写真に保存・共有</span> を押すと、線を描き込んだ画像を写真アプリに保存したり、他のアプリへ送ったりできます。ファイル名は「氏名_日付_正面」の形式です。</p>
+
+<h2 id="print">7. 印刷する</h2>
+
+<p>詳細画面の下にある <span class="key">印刷</span> を押すと、レイアウトを選ぶ画面が出ます。</p>
+
+<table>
+  <tr><th><span class="key pri">両面用（2ページ）</span></th>
+      <td>1ページ目に正面、2ページ目に側面。写真を大きく見せたいとき向け。プリンタ側で両面印刷をオンにすると、紙1枚の表裏になります</td></tr>
+  <tr><th><span class="key">1ページに2枚</span></th>
+      <td>正面と側面を横並びで1枚に収めます。紙を節約したいとき向け</td></tr>
+</table>
+
+<p>比較表示にしている状態で印刷すると、<strong>2時点が並んだ形</strong>で印刷されます。</p>
+
+<h3>iPadでの印刷手順</h3>
+<ol class="step">
+  <li><strong>レイアウトを選ぶ</strong><br>
+      印刷用のデータを作ります。数秒かかります。</li>
+  <li><strong>印刷プレビューで中身を確認する</strong><br>
+      各ページの仕上がりがそのまま表示されます。</li>
+  <li><strong><span class="key pri">プリント・共有</span> を押す</strong><br>
+      共有メニューが開きます。</li>
+  <li><strong>「プリント」を選ぶ</strong><br>
+      プリンタと部数、両面設定を確認して印刷します。</li>
+</ol>
+
+<div class="note">
+  <p>うまく印刷できないときは、プレビュー画面の画像を長押しして「"写真"に保存」し、写真アプリから印刷してください。</p>
+</div>
+
+<p>PC・Macの場合は、レイアウトを選ぶとそのままブラウザの印刷画面が開きます。</p>
+
+<h2 id="backup">8. バックアップと端末移行</h2>
+
+<p>記録はその端末の中だけに保存されています。端末の故障・紛失・初期化で失われるため、定期的な書き出しをおすすめします。</p>
+
+<h3>書き出す</h3>
+<ol class="step">
+  <li><strong>一覧画面を一番下までスクロールする</strong></li>
+  <li><strong><span class="key">全データを書き出し（JSON）</span> を押す</strong><br>
+      写真も線も含めた全記録が1つのファイルになります。ファイルアプリやクラウドドライブなど、安全な場所に保管してください。</li>
+</ol>
+
+<h3>読み込む</h3>
+<ol class="step">
+  <li><strong>移行先の端末でアプリを開き、一番下の <span class="key">JSONを読み込み</span> を押す</strong></li>
+  <li><strong>書き出したファイルを選ぶ</strong><br>
+      既存の記録は消えません。同じ記録は重複せずに取り込まれます。</li>
+</ol>
+
+<div class="warn">
+  <p><strong>端末を入れ替える前、iPadを初期化する前には必ず書き出してください。</strong>書き出しをせずに消した記録は復旧できません。</p>
+</div>
+
+<h3>保存容量が足りなくなったら</h3>
+<p>容量が残り少なくなると、一覧画面の上部に警告が出ます。JSONで書き出してバックアップを取ったうえで、古い記録を削除してください。</p>
+
+<h2 id="update">9. アプリの更新</h2>
+
+<p>一覧画面の一番下に、使用中のバージョン（例：<strong>バージョン 2026-11-15d</strong>）が表示されます。</p>
+
+<ul>
+  <li>更新があると<strong>自動的に最新版へ切り替わります</strong>。編集中・撮影中・印刷プレビュー中は中断されず、一覧に戻ったときに切り替わります</li>
+  <li>すぐに確認したいときは <span class="key">更新を確認</span> を押してください</li>
+  <li>複数のiPadで使っている場合、更新は各端末でそれぞれ反映されます</li>
+</ul>
+
+<h2 id="trouble">10. 困ったときは</h2>
+
+<table>
+  <tr><th>記録が消えた</th>
+      <td>Safariのタブのまま使っていた場合、7日間開かないとiPadがデータを削除します。ホーム画面に追加して使ってください。Safariの「履歴とWebサイトデータを消去」でも消えます</td></tr>
+  <tr><th>他のiPadの記録が出てこない</th>
+      <td>仕様です。記録は端末ごとに別々に保存されます。移したい場合はJSONで書き出して読み込んでください</td></tr>
+  <tr><th>カメラが起動しない</th>
+      <td>初回はカメラの使用許可を求められます。許可していない場合は、iPadの「設定」→「Safari」→「カメラ」を確認してください</td></tr>
+  <tr><th>印刷の2ページ目が白紙になる</th>
+      <td>古いバージョンの不具合です。一覧画面下のバージョンを確認し、<span class="key">更新を確認</span> を押して最新版にしてください</td></tr>
+  <tr><th>バージョンが表示されない</th>
+      <td>古いバージョンのままです。ホーム画面のアイコンを削除し、「<a href="#setup">2. 導入手順</a>」からやり直してください</td></tr>
+  <tr><th>保存できないという表示が出る</th>
+      <td>プライベートブラウズでは保存できません。通常のウインドウで開いてください</td></tr>
+  <tr><th>写真の向きがおかしい</th>
+      <td>撮影時のiPadの向きが影響します。撮り直してください</td></tr>
+</table>
+
+<footer>
+  <p>姿勢写真記録　取扱説明書<br>
+  写真・氏名・メモはすべて端末内（ブラウザのIndexedDB）にのみ保存され、外部に送信されることはありません。</p>
+  <p><a class="toplink" href="./">アプリを開く</a></p>
+</footer>
+
+</div>
+</body>
+</html>
