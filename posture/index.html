@@ -1755,7 +1755,11 @@ function buildPDF(pages){
   }
   function startObj(num){ offs[num] = len; }
   var A4S = 595.28, A4L = 841.89;
-  var total = 2 + pages.length*3;
+  // オブジェクトは 1=カタログ, 2=ページ一覧, 以降1ページにつき3つ。
+  // xref / Size は「最大番号＋1」。ここを間違えると最後のオブジェクトが
+  // 表から漏れ、最終ページが白紙になる
+  var maxObj = 2 + pages.length*3;
+  var total = maxObj + 1;
 
   put('%PDF-1.4\n');
   put(new Uint8Array([0x25,0xE2,0xE3,0xCF,0xD3,0x0A]));
