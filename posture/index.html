@@ -305,6 +305,10 @@ label.field textarea{min-height:88px;resize:vertical}
       <input id="impFile" type="file" accept="application/json,.json" hidden>
     </div>
     <p class="hint">データはこの端末のブラウザ内（IndexedDB）にのみ保存されます。外部へ送信されません。端末やブラウザを変える前に必ず書き出してください。</p>
+    <div class="row" style="margin-top:12px;align-items:center">
+      <span class="hint grow" id="verText" style="margin:0"></span>
+      <button id="btnUpd" class="btn sm">更新を確認</button>
+    </div>
   </div>
 </section>
 
@@ -383,7 +387,7 @@ label.field textarea{min-height:88px;resize:vertical}
 <section id="v-print" class="hidden" aria-hidden="true">
   <div class="pv-bar">
     <button id="pvClose" class="btn sm">閉じる</button>
-    <span class="grow" style="font-weight:700">印刷プレビュー</span>
+    <span class="grow" style="font-weight:700">印刷プレビュー <span id="pvVer" style="font-weight:400;font-size:13px;color:#666"></span></span>
     <button id="pvShare" class="btn sm primary">プリント・共有</button>
   </div>
   <div class="pv-body" id="pvBody"></div>
@@ -402,6 +406,7 @@ label.field textarea{min-height:88px;resize:vertical}
 /* =========================================================
    定数
    ========================================================= */
+var APP_VER  = '2026-11-15d';   // 更新したらここを上げる（端末が最新かの確認用）
 var COLORS   = {red:'#ff2a2a', yellow:'#ffd400', white:'#ffffff'};
 var SLOT_KEYS = ['front','side'];
 var SLOT_LABEL = {front:'正面', side:'側面'};
@@ -2073,6 +2078,7 @@ function goList(){
   renderTasks = [];
   renderList();
   showView('list');
+  if(pendingReload) applyUpdate();
 }
 
 $('btnNew').addEventListener('click', function(){ openEdit(null); });
@@ -2126,22 +2132,57 @@ $('impFile').addEventListener('change', function(e){
   if(f) importJson(f);
 });
 
+/* ---------- バージョン表示と自動更新 ---------- */
+$('verText').textContent = 'バージョン ' + APP_VER;
+$('pvVer').textContent = APP_VER;
+
+var swReg = null, reloading = false, pendingReload = false;
+// 編集中・撮影中・プレビュー中に勝手に再読み込みすると作業が飛ぶので待つ
+function busyNow(){
+  return !$('v-edit').classList.contains('hidden') ||
+         !$('v-print').classList.contains('hidden') ||
+         !$('v-cam').classList.contains('hidden');
+}
+function applyUpdate(){
+  if(reloading) return;
+  if(busyNow()){
+    if(!pendingReload){ pendingReload = true; toast('新しいバージョンがあります。一覧に戻ると更新します'); }
+    return;
+  }
+  reloading = true;
+  location.reload();
+}
+
 // オフライン動作（サーバーに置いた場合のみ。file:// では何もしない）
 if('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
+  var hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    // 初回の掌握では再読み込みしない。2回目以降＝更新なので作り直す
+    if(hadController) applyUpdate();
+    else hadController = true;
+  });
   window.addEventListener('load', function(){
     navigator.serviceWorker.register('sw.js').then(function(reg){
+      swReg = reg;
       reg.addEventListener('updatefound', function(){
         var sw = reg.installing;
         if(!sw) return;
         sw.addEventListener('statechange', function(){
-          if(sw.state === 'installed' && navigator.serviceWorker.controller){
-            toast('新しいバージョンがあります。再読み込みしてください');
-          }
+          if(sw.state === 'activated' && hadController) applyUpdate();
         });
       });
     }).catch(function(){});
   });
 }
+$('btnUpd').addEventListener('click', function(){
+  if(!swReg){ location.reload(); return; }
+  toast('更新を確認しています…');
+  swReg.update().then(function(){
+    setTimeout(function(){
+      if(!pendingReload && !reloading) toast('最新版です（' + APP_VER + '）');
+    }, 1800);
+  }).catch(function(){ toast('更新を確認できませんでした'); });
+});
 
 reload().then(function(){
   renderList();
